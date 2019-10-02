@@ -12,4 +12,4 @@ shape_by_coords_spyder.py --> A simple test script to test the python code (exce
 ______________________________________________________________________________________________
 
 
-How to use the parser(s): Replace the directory of the CityJSON file in line 7 with your local directory. Enjoy! 
+How to use the parser(s): Replace the directory of the CityJSON file in line 7 of the parsers scripts with your local directory. Enjoy! 
