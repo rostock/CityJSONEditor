@@ -8,3 +8,8 @@ cityjson_parser_parent-child.py --> The above parser augmented to also store the
 
 
 shape_by_coords_spyder.py --> A simple test script to test the python code (except the commands that utilize the Blender API -bpy- library).
+
+______________________________________________________________________________________________
+
+
+How to use the parser(s): Replace the directory of the CityJSON file in line 7 with your local directory. Enjoy! 
