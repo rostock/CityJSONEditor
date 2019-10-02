@@ -4,7 +4,7 @@ import json
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
 
-with open('/home/konstantinos/Desktop/Thesis/cityjson_datasets/vienna.json') as json_file: 
+with open('/home/konstantinos/Thesis/cityjson_datasets/vienna.json') as json_file: 
     data = json.load(json_file)
     vertices=list()
     
@@ -67,7 +67,7 @@ with open('/home/konstantinos/Desktop/Thesis/cityjson_datasets/vienna.json') as 
                 obj = bpy.data.objects.new(child, mesh_data)
                 scene = bpy.context.scene
                 scene.collection.objects.link(obj)
-                #bpy.data.objects[name].select_set(True)
+                bpy.data.objects[child].select_set(True)
             
             
             #Creating empty meshes of the parents to join all the children    
