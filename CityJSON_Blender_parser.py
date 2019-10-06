@@ -131,7 +131,7 @@ from bpy.types import Operator
 
 
 class ImportCityJSON(Operator, ImportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
+    """CityJSON import tool"""
     bl_idname = "import_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Import Some Data"
 
@@ -152,15 +152,15 @@ class ImportCityJSON(Operator, ImportHelper):
         default=True,
     )
 
-    type: EnumProperty(
-        name="Example Enum",
-        description="Choose between two items",
-        items=(
-            ('OPT_A', "First Option", "Description one"),
-            ('OPT_B', "Second Option", "Description two"),
-        ),
-        default='OPT_A',
-    )
+    #type: EnumProperty(
+    #    name="Example Enum",
+    #    description="Choose between two items",
+    #    items=(
+    #        ('OPT_A', "First Option", "Description one"),
+    #        ('OPT_B', "Second Option", "Description two"),
+    #    ),
+    #    default='OPT_A',
+    #)
 
     def execute(self, context):
         return read_some_data(context, self.filepath, self.use_setting)
