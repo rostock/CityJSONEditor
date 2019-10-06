@@ -133,7 +133,7 @@ from bpy.types import Operator
 class ImportCityJSON(Operator, ImportHelper):
     """CityJSON import tool"""
     bl_idname = "import_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
-    bl_label = "Import Some Data"
+    bl_label = "Import CityJSON"
 
     # ImportHelper mixin class uses this
     filename_ext = ".json"
