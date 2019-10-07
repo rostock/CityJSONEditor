@@ -1,21 +1,15 @@
 # Blender-CityJSON-Plugin
 
-A Blender plugin to visualize 3D city models encoded in [CityJSON](http://cityjson.org) format
+A Blender plugin to import 3D city models encoded in the [CityJSON](http://cityjson.org) format.
 
 ## Requirements
 
-- Blender Version 2.80
-- Python Version 3.x
+- Blender Version >=2.80
 
-## Files included in the repository
-
-- `CityJSON_Blender_parser.py` is the parser script
-- `attributes.png`
-- `README.md`
 
 ## How to install and use the parser
 
-1. Download the `CityJSON_Blender_parser.py` add-on, and install it locally to Blender. 
+1. Download the `CityJSON_Blender_parser.py` add-on, and install it locally to Blender. Menu `Edit > Preferences >Add-ons`, and `Install`. 
 
 2. Make sure the add-on is enabled (by default it is disabled).
 
@@ -30,7 +24,10 @@ A Blender plugin to visualize 3D city models encoded in [CityJSON](http://cityjs
 
 5. To select all the children of a building right click on the building's (parent's) ID and click `Select Hierarchy`
 
-6. To see the properties of each object simply select the object and click on the context.object tab on the bottom right (Blender 2.80 interface). Then click the `Custom Properties` drop down menu. (See the screenshot `attributes.png` for more info.)
+6. To see the properties of each object simply select the object and click on the context.object tab on the bottom right (Blender 2.80 interface). Then click the `Custom Properties` drop down menu. (see the screenshot below)
+
+![](attributes.png)
+
 
 ## Development
 
