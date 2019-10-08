@@ -1,3 +1,4 @@
 shape_by_coords_spyder.py
 cityjson_parser.py
-CityJSON_Blender_parser(copy of original_6.10.19).py
+CityJSON_Blender_parser(copy).py
+parsing_coords_from_object.py
