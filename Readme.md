@@ -15,7 +15,7 @@ A Blender plugin to import 3D city models encoded in the [CityJSON](http://cityj
 
 3. Go to `File > Import > CityJSON` and navigate to the directory where the CityJSON file is stored and open it.
 
-4. Select a building / building part and make sure the object is a `cube_mesh_data.XXXX` and NOT `empty.XXXX`. To check that click on the drop down symbol next to the ID of the object/building on the top right of the interface. Then click on the `View` tab and click `Frame Selected` (sometimes after `Frame Selected` is clicked you need to zoom in for the render to appear on your screen). 
+4. Select a building / building part and make sure the object is a 'child' and NOT a parent object. Then click on the `View` tab and click `Frame Selected` (sometimes after `Frame Selected` is clicked you need to zoom in for the render to appear on your screen). 
 
     If the buildings behave weirdly as you rotate change the view from `Perspective` to `Orthographic` by clicking  the `numpad 5` key.
 
