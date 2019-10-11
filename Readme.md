@@ -15,12 +15,7 @@ A Blender plugin to import 3D city models encoded in the [CityJSON](http://cityj
 
 3. Go to `File > Import > CityJSON` and navigate to the directory where the CityJSON file is stored and open it.
 
-4. Select a building / building part and make sure the object is a 'child' and NOT a 'parent' object. Then click on the `View` tab and click `Frame Selected` (sometimes after `Frame Selected` is clicked you need to zoom in for the render to appear on your screen). 
-
-    If the buildings behave weirdly as you rotate change the view from `Perspective` to `Orthographic` by clicking  the `numpad 5` key.
-
-    If you want to visualize a certain area, click `Shift + B` and draw a rectangle with your mouse to zoom in into that specific area of the dataset.
-
+4. If you want to visualize a certain area, click `Shift + B` and draw a rectangle with your mouse to zoom in into that specific area of the dataset.
 
 5. To select all the children of a building right click on the building's (parent's) ID and click `Select Hierarchy`
 
