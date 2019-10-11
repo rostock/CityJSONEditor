@@ -30,6 +30,31 @@ def assign_properties(obj, props, prefix=[]):
 
     return obj
 
+#Translating function to origin
+def coord_translate_axis_origin(vertices):
+    #Finding minimum value of x,y,z
+    minx = min(i[0] for i in vertices)
+    miny = min(i[1] for i in vertices)
+    minz = min(i[2] for i in vertices)
+    
+    #Calculating new coordinates
+    translated_x = [i[0]-minx for i in vertices]
+    translated_y = [i[1]-miny for i in vertices]
+    translated_z = [i[2]-minz for i in vertices]
+    
+    return (tuple(zip(translated_x,translated_y,translated_z)),minx,miny,minz)
+
+#Translating back to original coords function
+def original_coordinates(vertices,minx,miny,minz):
+    
+    #Calculating original coordinates
+    original_x = [i[0]+minx for i in vertices]
+    original_y = [i[1]+miny for i in vertices]
+    original_z = [i[2]+minz for i in vertices]
+    
+    return (tuple(zip(original_x,original_y,original_z)))
+    
+
 
 def cityjson_parser(context, filepath, cityjson_import_settings):
     
@@ -55,7 +80,10 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
                 y=vertex[1]*trans_param['scale'][1]+trans_param['translate'][1]
                 z=vertex[2]*trans_param['scale'][2]+trans_param['translate'][2]
                 vertices.append((x,y,z))
-                        
+        
+        translation = coord_translate_axis_origin(vertices)
+        #Updating vertices with new translated vertices
+        vertices = translation[0]               
         #Parsing the boundary data of every object
         for theid in data['CityObjects']:
             for geom in data['CityObjects'][theid]['geometry']:
