@@ -125,6 +125,45 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
             #Assigning attributes to chilren objects
             obj = assign_properties(obj, data["CityObjects"][theid])
         
+###################### 
+       
+        #Assigning semantics to surfaces
+        for theid in data['CityObjects']:
+            obj = bpy.data.objects[theid].data
+            for geom in data['CityObjects'][theid]['geometry']:
+                if 'semantics' in geom:
+                    values =geom['semantics']['values']
+                    for surface in geom['semantics']['surfaces']:
+                        mat = bpy.data.materials.new(name="Test_Material")
+                        assign_properties(mat, surface)                   
+                        #Assigning materials on each object
+                        obj.materials.append(mat)
+                        #Assign color based on surface type
+                        if surface['type'] =='WallSurface':
+                            mat.diffuse_color = (0.3,0.3,0.3,1)                            
+                        elif surface['type'] =='RoofSurface':
+                            mat.diffuse_color = (0.9,0.057,0.086,1)                                       
+                        elif surface['type'] =='GroundSurface':
+                            mat.diffuse_color = (0.507,0.233,0.036,1)                            
+                        else:
+                            mat.diffuse_color = (0,0,0,1)
+                            
+                    mesh = bpy.data.objects[theid].data
+                    face_list = [face for face in mesh.polygons]  
+                    
+                    #Really dirty approach just for now to handle Den Haag dataset    
+                    if isinstance(values,list):
+                        if isinstance(values[0],list):
+                            values=values[0]
+                    i=0
+                    for face in face_list:
+                        if face.select:
+                            face.material_index = values[i]
+                            i+=1                    
+                                                
+######################
+        
+        
         #Creating parent-child relationship 
         objects = bpy.data.objects  
         for theid in data['CityObjects']:
