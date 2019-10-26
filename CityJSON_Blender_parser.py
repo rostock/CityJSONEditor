@@ -16,6 +16,10 @@ from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
+def clean_list(values):
+    while isinstance(values[0],list):
+        values = values[0]
+    return values
 
 def assign_properties(obj, props, prefix=[]):
     """Assigns the custom properties to obj based on the props"""
@@ -86,9 +90,11 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
         vertices = translation[0]               
         #Parsing the boundary data of every object
         for theid in data['CityObjects']:
-            for geom in data['CityObjects'][theid]['geometry']:
-                
-                bound=list()                
+            bound=list()                
+
+            if len(data['CityObjects'][theid]['geometry']):
+                geom = data['CityObjects'][theid]['geometry'][0]
+                    
                 #Checking how nested the geometry is i.e what kind of 3D geometry it contains
                 if((geom['type']=='MultiSurface') or (geom['type'] == 'CompositeSurface')):
                     
@@ -102,7 +108,7 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
                         for face in shell:
                             for verts in face:
                                 bound.append(tuple(verts)) 
-                                                                   
+                                                                
                 elif (geom['type']=='MultiSolid'):
                     
                     for solid in geom['boundaries']:
@@ -113,7 +119,8 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
                                     
             #Visualization part
             mesh_data = bpy.data.meshes.new("mesh")
-            mesh_data.from_pydata(vertices, [], bound)
+            if len(bound):
+                mesh_data.from_pydata(vertices, [], bound)
             mesh_data.update()
             obj = bpy.data.objects.new(theid, mesh_data)
             scene = bpy.context.scene
@@ -126,13 +133,13 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
             obj = assign_properties(obj, data["CityObjects"][theid])
         
 ###################### 
-       
-        #Assigning semantics to surfaces
-        for theid in data['CityObjects']:
+
             obj = bpy.data.objects[theid].data
-            for geom in data['CityObjects'][theid]['geometry']:
+       
+            if len(data['CityObjects'][theid]['geometry']):
+                geom = data['CityObjects'][theid]['geometry'][0]
                 if 'semantics' in geom:
-                    values =geom['semantics']['values']
+                    values = geom['semantics']['values']
                     for surface in geom['semantics']['surfaces']:
                         mat = bpy.data.materials.new(name="Test_Material")
                         assign_properties(mat, surface)                   
@@ -140,7 +147,7 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
                         obj.materials.append(mat)
                         #Assign color based on surface type
                         if surface['type'] =='WallSurface':
-                            mat.diffuse_color = (0.3,0.3,0.3,1)                            
+                            mat.diffuse_color = (0.7,0.7,0.7,1)                            
                         elif surface['type'] =='RoofSurface':
                             mat.diffuse_color = (0.9,0.057,0.086,1)                                       
                         elif surface['type'] =='GroundSurface':
@@ -148,19 +155,13 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
                         else:
                             mat.diffuse_color = (0,0,0,1)
                             
-                    mesh = bpy.data.objects[theid].data
-                    face_list = [face for face in mesh.polygons]  
+                    obj.update()                       
+                    values = clean_list(values)
                     
-                    #Really dirty approach just for now to handle Den Haag dataset    
-                    if isinstance(values,list):
-                        if isinstance(values[0],list):
-                            values=values[0]
                     i=0
-                    for face in face_list:
-                        if face.select:
-                            face.material_index = values[i]
-                            i+=1                    
-                                                
+                    for face in obj.polygons:
+                        face.material_index = values[i]
+                        i+=1
 ######################
         
         
