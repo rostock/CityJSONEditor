@@ -19,12 +19,15 @@ A Blender plugin to import 3D city models encoded in the [CityJSON](http://cityj
 
 5. To select all the children of a building right click on the building's (parent's) ID and click `Select Hierarchy`
 
-6. To see the properties of each object simply select the object and click on the `Context.Object` tab on the bottom right (Blender 2.80 interface). Then click the `Custom Properties` drop down menu. (see the screenshot below)
+6. To see the properties of each object simply select the object and click on the `Context.Object` tab on the bottom right (Blender 2.80 interface). Then click the `Custom Properties` drop down menu. (See the screenshot below!)
 
-7. To see the semantics of each surface select an object in `Object Mode` then hit `TAB` to enter `Edit Mode` and click `Face Select` (top left of the viewport next to the `View` button). Then click on the `Context.Material` tab at the bottom right. Then scroll down and click on the `Custom Properties`. (see the screenshot below)
+7. To see the semantics of each surface select an object in `Object Mode` then hit `TAB` to enter `Edit Mode` and click `Face Select` (top left of the viewport next to the `View` button). Then click on the `Context.Material` tab at the bottom right. Then scroll down and click on the `Custom Properties`. (See the screenshot below!)
+
+8. In case more than one geometries exist for the objects, for every geometry a new `Scene` is created and the objects represented in that geometry are rendered into that `Scene`. You can alternate among different `Scenes` by clicking on the scene browser on the top right of the interface. (See the screenshot below!) 
 
 ![](attributes.png) 
 ![](semantics.png)
+![](scenes.png)
 
 
 ## Development
