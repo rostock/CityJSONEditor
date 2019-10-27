@@ -97,26 +97,38 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
                     
                 #Checking how nested the geometry is i.e what kind of 3D geometry it contains
                 if((geom['type']=='MultiSurface') or (geom['type'] == 'CompositeSurface')):
-                    
+                
                     for face in geom['boundaries']:
-                        for verts in face:
-                            bound.append(tuple(verts))
-                            
+                        # This if - else statement ignores all the holes if any in any geometry
+                        if len(face)>1:
+                            face = face[0]
+                            bound.append(tuple(face))
+                        else:
+                            for verts in face:
+                                bound.append(tuple(verts))
+                    
                 elif (geom['type']=='Solid'):
                     
                     for shell in geom['boundaries']:
                         for face in shell:
-                            for verts in face:
-                                bound.append(tuple(verts)) 
+                            if (len(face)>1):
+                                face = face[0]
+                                bound.append(tuple(face))
+                            else:
+                                for verts in face:
+                                    bound.append(tuple(verts))
                                                                 
                 elif (geom['type']=='MultiSolid'):
                     
                     for solid in geom['boundaries']:
                         for shell in solid:
                             for face in shell:
-                                for verts in face:
-                                    bound.append(tuple(verts))
-                                    
+                                if (len(face)>1):
+                                    face = face[0]
+                                    bound.append(tuple(face))
+                                else:
+                                    for verts in face:
+                                        bound.append(tuple(verts))
             #Visualization part
             mesh_data = bpy.data.meshes.new("mesh")
             if len(bound):
