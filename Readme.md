@@ -8,7 +8,7 @@ A Blender plugin to import 3D city models encoded in the [CityJSON](http://cityj
 
 ## Testing Datasets
 
-You can find sample datasets at the official [CityJSON](https://www.cityjson.org/datasets/#datasets-converted-from-citygml)website. For the `New York` ,`Zurich` and `Railway`, the plugin will most probably crash due to the very big size of the first two datasets and to the templates structure of the last which is not yet supported by the plugin. 
+You can find sample datasets at the official [CityJSON](https://www.cityjson.org/datasets/#datasets-converted-from-citygml) website. For the `New York` ,`Zurich` and `Railway`, the plugin will most probably crash due to the very big size of the first two datasets and to the templates structure of the last which is not yet supported by the plugin. 
 
 For the rest sample CityJSON files everything should work smoothly. Depending on your machine it could take some seconds up to a minute to import the model. 
 
