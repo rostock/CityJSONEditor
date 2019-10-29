@@ -63,7 +63,22 @@ def original_coordinates(vertices,minx,miny,minz):
     
     return (tuple(zip(original_x,original_y,original_z)))
 
-
+def clean_buffer(vertices, bounds):
+    #Cleans the vertices index from unused vertices3
+    new_bounds = list()
+    new_vertices = list()
+    i = 0
+    for bound in bounds:
+        new_bound = list()
+        
+        for j in range(len(bound)):
+            new_vertices.append(vertices[bound[j]])
+            new_bound.append(i)
+            i=i+1
+        
+        new_bounds.append(tuple(new_bound))
+    
+    return new_vertices, new_bounds
 
 def objects_renderer(pointer, data, vertices):
     #Parsing the boundary data of every object
@@ -78,38 +93,28 @@ def objects_renderer(pointer, data, vertices):
             
                 for face in geom['boundaries']:
                     # This if - else statement ignores all the holes if any in any geometry
-                    if len(face)>1:
-                        face = face[0]
-                        bound.append(tuple(face))
-                    else:
-                        for verts in face:
-                            bound.append(tuple(verts))
+                    if len(face)>0:
+                        bound.append(tuple(face[0]))
                 
             elif (geom['type']=='Solid'):
                 for shell in geom['boundaries']:
                     for face in shell:
-                        if (len(face)>1):
-                            face = face[0]
-                            bound.append(tuple(face))
-                        else:
-                            for verts in face:
-                                bound.append(tuple(verts))
+                        if (len(face)>0):
+                            bound.append(tuple(face[0]))
                                                             
             elif (geom['type']=='MultiSolid'):
                 for solid in geom['boundaries']:
                     for shell in solid:
                         for face in shell:
-                            if (len(face)>1):
-                                face = face[0]
-                                bound.append(tuple(face))
-                            else:
-                                for verts in face:
-                                    bound.append(tuple(verts))
+                            if (len(face)>0):
+                                bound.append(tuple(face[0]))
+        
+        temp_vertices, temp_bound = clean_buffer(vertices, bound)
         
         #Visualization part
         mesh_data = bpy.data.meshes.new("mesh")
         if len(bound):
-            mesh_data.from_pydata(vertices, [], bound)
+            mesh_data.from_pydata(temp_vertices, [], temp_bound)
         mesh_data.update()
         obj = bpy.data.objects.new(theid, mesh_data)
         scene = bpy.context.scene
@@ -175,8 +180,18 @@ def objects_renderer(pointer, data, vertices):
 def cityjson_parser(context, filepath, cityjson_import_settings):
     
     print("Importing CityJSON file...")
+    #Deleting previous objects every time a new CityJSON file is imported
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=True)
+    #Deleting previously existing scenes except the default 'Scene'
+    for scene in bpy.data.scenes.keys():
+        if scene == 'Scene':
+            continue
+        else:
+            bpy.context.window.scene = bpy.data.scenes[scene]
+            bpy.context.scene
+            bpy.ops.scene.delete()
+    
         
     #Open CityJSON file
     with open(filepath) as json_file:
@@ -251,11 +266,11 @@ class ImportCityJSON(Operator, ImportHelper):
         return cityjson_parser(context, self.filepath, self.use_setting)
 
 
-data="CityJSON"
+
 
 def write_cityjson(context, filepath, cityjson_export_settings):
     with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+        json.dump("No problem", f, ensure_ascii=False, indent=4)
     #print("running write_some_data...")
     #f = open(filepath, 'w', encoding='utf-8')
     #f.write("Hello World %s" % use_some_setting)
