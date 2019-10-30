@@ -9,7 +9,7 @@ bl_info = {
     "wiki_url": "",
     "category": "Import-Export",
 }
-
+import time
 import bpy
 import json
 import random
@@ -80,101 +80,85 @@ def clean_buffer(vertices, bounds):
     
     return new_vertices, new_bounds
 
-def objects_renderer(pointer, data, vertices):
-    #Parsing the boundary data of every object
-    for theid in data['CityObjects']:
-        bound=list()                
+def geometry_renderer(data,vertices,theid,index):
+    #Parsing the boundary data of every geometry
+    bound=list()                
+    
+    geom = data['CityObjects'][theid]['geometry'][index]
+    if 'lod' in geom:
+        prefix = "LOD_" + str(geom['lod'])
+    else:
+        prefix = "no_LOD_"+str(index)
+    
+    #Checking how nested the geometry is i.e what kind of 3D geometry it contains
+    if((geom['type']=='MultiSurface') or (geom['type'] == 'CompositeSurface')):
+    
+        for face in geom['boundaries']:
+            # This if - else statement ignores all the holes if any in any geometry
+            if len(face)>0:
+                bound.append(tuple(face[0]))
         
-        if len(data['CityObjects'][theid]['geometry']):
-            geom = data['CityObjects'][theid]['geometry'][pointer]
-            
-            #Checking how nested the geometry is i.e what kind of 3D geometry it contains
-            if((geom['type']=='MultiSurface') or (geom['type'] == 'CompositeSurface')):
-            
-                for face in geom['boundaries']:
-                    # This if - else statement ignores all the holes if any in any geometry
-                    if len(face)>0:
+    elif (geom['type']=='Solid'):
+        for shell in geom['boundaries']:
+            for face in shell:
+                if (len(face)>0):
+                    bound.append(tuple(face[0]))
+                                                    
+    elif (geom['type']=='MultiSolid'):
+        for solid in geom['boundaries']:
+            for shell in solid:
+                for face in shell:
+                    if (len(face)>0):
                         bound.append(tuple(face[0]))
-                
-            elif (geom['type']=='Solid'):
-                for shell in geom['boundaries']:
-                    for face in shell:
-                        if (len(face)>0):
-                            bound.append(tuple(face[0]))
-                                                            
-            elif (geom['type']=='MultiSolid'):
-                for solid in geom['boundaries']:
-                    for shell in solid:
-                        for face in shell:
-                            if (len(face)>0):
-                                bound.append(tuple(face[0]))
-        
-        temp_vertices, temp_bound = clean_buffer(vertices, bound)
-        
-        #Visualization part
-        mesh_data = bpy.data.meshes.new("mesh")
-        if len(bound):
-            mesh_data.from_pydata(temp_vertices, [], temp_bound)
-        mesh_data.update()
-        obj = bpy.data.objects.new(theid, mesh_data)
-        scene = bpy.context.scene
-        scene.collection.objects.link(obj)
-        
-        #Assigning attributes to chilren objects
-        obj = assign_properties(obj, data["CityObjects"][theid])
+    
+    temp_vertices, temp_bound = clean_buffer(vertices, bound)
+    
+    #Visualization part
+    geometryname = prefix+"_"+ theid
+    mesh_data = bpy.data.meshes.new("mesh")
+    mesh_data.from_pydata(temp_vertices, [], temp_bound)
+    mesh_data.update()
+    
+    geom_obj = bpy.data.objects.new(geometryname, mesh_data)
+    scene = bpy.context.scene
+    scene.collection.objects.link(geom_obj)
+    
+    #Assigning attributes to geometries
+    geom_obj = assign_properties(geom_obj, data["CityObjects"][theid])
 
-        #Assigning semantics
-        obj = bpy.data.objects[theid].data
-   
-        if len(data['CityObjects'][theid]['geometry']):
-            geom = data['CityObjects'][theid]['geometry'][pointer]
-            
-            if 'semantics' in geom:
-                values = geom['semantics']['values']
-                
-                for surface in geom['semantics']['surfaces']:
-                    mat = bpy.data.materials.new(name="Test_Material")
-                    assign_properties(mat, surface)                   
-                    #Assigning materials on each object
-                    obj.materials.append(mat)
-                    #Assign color based on surface type
-                    
-                    if surface['type'] =='WallSurface':
-                        mat.diffuse_color = (0.8,0.8,0.8,1)                            
-                    
-                    elif surface['type'] =='RoofSurface':
-                        mat.diffuse_color = (0.9,0.057,0.086,1)                                       
-                    
-                    elif surface['type'] =='GroundSurface':
-                        mat.diffuse_color = (0.507,0.233,0.036,1)                            
-                    
-                    else:
-                        mat.diffuse_color = (0,0,0,1)
-                        
-                obj.update()                       
-                values = clean_list(values)
-                i=0
-                
-                for face in obj.polygons:
-                    face.material_index = values[i]
-                    i+=1
-     
-    #Creating parent-child relationship 
-    objects = bpy.data.objects  
-    for theid in data['CityObjects']:
+    #Assigning semantics
+         
+    if 'semantics' in geom:
+        values = geom['semantics']['values']
         
-        if 'children' in data['CityObjects'][theid]:
-            # Storing parent's ID
-            parent_obj = objects[theid]
+        for surface in geom['semantics']['surfaces']:
+            mat = bpy.data.materials.new(name="Material")
+            assign_properties(mat, surface)                   
+            #Assigning materials on each object
+            geom_obj.data.materials.append(mat)
+            #Assign color based on surface type
             
-            for child in data['CityObjects'][theid]['children']:
-                #Assigning parent to child
-                objects[child].parent = parent_obj
+            if surface['type'] =='WallSurface':
+                mat.diffuse_color = (0.8,0.8,0.8,1)                            
+            
+            elif surface['type'] =='RoofSurface':
+                mat.diffuse_color = (0.9,0.057,0.086,1)                                       
+            
+            elif surface['type'] =='GroundSurface':
+                mat.diffuse_color = (0.507,0.233,0.036,1)                            
+            
+            else:
+                mat.diffuse_color = (0,0,0,1)
                 
-        elif 'parents' in data['CityObjects'][theid]: 
-            #Assigning child to parent
-            objects[theid].parent = objects[data['CityObjects'][theid]['parents'][0]]
-    return 0
+        geom_obj.data.update()                       
+        values = clean_list(values)
+        i=0
+        
+        for face in geom_obj.data.polygons:
+            face.material_index = values[i]
+            i+=1
+
+    return geom_obj
     
 
 def cityjson_parser(context, filepath, cityjson_import_settings):
@@ -183,16 +167,7 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
     #Deleting previous objects every time a new CityJSON file is imported
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=True)
-    #Deleting previously existing scenes except the default 'Scene'
-    for scene in bpy.data.scenes.keys():
-        if scene == 'Scene':
-            continue
-        else:
-            bpy.context.window.scene = bpy.data.scenes[scene]
-            bpy.context.scene
-            bpy.ops.scene.delete()
-    
-        
+            
     #Open CityJSON file
     with open(filepath) as json_file:
         data = json.load(json_file)
@@ -214,19 +189,38 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
         translation = coord_translate_axis_origin(vertices)
         #Updating vertices with new translated vertices
         vertices = translation[0]
-        
-        #Pick a random building ID to find the number of geometries
-        theid = random.choice(list(data['CityObjects']))
-        while (len(data['CityObjects'][theid]['geometry']) == 0):
-            theid = theid = random.choice(list(data['CityObjects']))
+        #Creating empty meshes for every CityObjects and linking its geometries as children-meshes
+        progress = 0
+        progress_max = len(data['CityObjects'])
+        start_render = time.time()
+        for theid in data['CityObjects']:
+            cityobject = bpy.data.objects.new(theid, None)
+            cityobject = assign_properties(cityobject, data["CityObjects"][theid])
+            scene = bpy.context.scene
+            scene.collection.objects.link(cityobject)
+                        
+            for i in range(len(data['CityObjects'][theid]['geometry'])):
+                geom_obj = geometry_renderer(data,vertices,theid,i)
+                geom_obj.parent = cityobject
+            progress+=1
             
-        #Create new scenes and render every geometry in each
-        for i in range(len(data['CityObjects'][theid]['geometry'])):
-            bpy.ops.scene.new(type='NEW')
-            bpy.context.scene.name ="Geometry "+ str(i)         
-            objects_renderer(i, data, vertices)
+            print ("Rendering: " + str(round(progress*100/progress_max, 1))+"% completed")    
+        end_render = time.time()
         
-        print("CityJSON file successfully imported.")
+        
+        #Assigning child building parts to parent buildings
+        progress = 0
+        start_hier = time.time()   
+        for theid in data['CityObjects']:
+            if 'parents' in data['CityObjects'][theid]:
+                bpy.data.objects[theid].parent = bpy.data.objects[data['CityObjects'][theid]['parents'][0]]
+            progress+=1
+            print ("Building Hierarchy " + str(round(progress*100/progress_max, 1))+"% completed")
+        end_hier= time.time()
+        print ("\n")
+        print("CityJSON file successfully imported!\n")
+        print ("Total Rendering Time: ", round(end_render-start_render,2),"s")
+        print ("Building Hierarchy: ", round(end_hier-start_hier,2),"s")
         
     return {'FINISHED'}
 
