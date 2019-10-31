@@ -17,8 +17,10 @@ from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
+
+
 def clean_list(values):
-    
+    #Creates a list of non list in case lists nested in lists exist
     while isinstance(values[0],list):
         values = values[0]
     return values
@@ -38,9 +40,8 @@ def assign_properties(obj, props, prefix=[]):
 
     return obj
 
-#Translating function to origin
 def coord_translate_axis_origin(vertices):
-    
+    #Translating function to origin
     #Finding minimum value of x,y,z
     minx = min(i[0] for i in vertices)
     miny = min(i[1] for i in vertices)
@@ -53,9 +54,9 @@ def coord_translate_axis_origin(vertices):
     
     return (tuple(zip(translated_x,translated_y,translated_z)),minx,miny,minz)
 
-#Translating back to original coords function
+
 def original_coordinates(vertices,minx,miny,minz):
-    
+    #Translating back to original coords 
     #Calculating original coordinates
     original_x = [i[0]+minx for i in vertices]
     original_y = [i[1]+miny for i in vertices]
@@ -67,7 +68,7 @@ def clean_buffer(vertices, bounds):
     #Cleans the vertices index from unused vertices3
     new_bounds = list()
     new_vertices = list()
-    i = 0
+    i=0
     for bound in bounds:
         new_bound = list()
         
@@ -79,6 +80,13 @@ def clean_buffer(vertices, bounds):
         new_bounds.append(tuple(new_bound))
     
     return new_vertices, new_bounds
+
+def write_cityjson(context, filepath):
+    #Will write all scene data in CityJSON format"
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump("No problem", f, ensure_ascii=False, indent=4)
+    
+    return {'FINISHED'}
 
 def geometry_renderer(data,vertices,theid,index):
     #Parsing the boundary data of every geometry
@@ -117,8 +125,7 @@ def geometry_renderer(data,vertices,theid,index):
     geometryname = prefix+"_"+ theid
     mesh_data = bpy.data.meshes.new("mesh")
     mesh_data.from_pydata(temp_vertices, [], temp_bound)
-    mesh_data.update()
-    
+    mesh_data.update()    
     geom_obj = bpy.data.objects.new(geometryname, mesh_data)
     scene = bpy.context.scene
     scene.collection.objects.link(geom_obj)
@@ -126,8 +133,7 @@ def geometry_renderer(data,vertices,theid,index):
     #Assigning attributes to geometries
     geom_obj = assign_properties(geom_obj, data["CityObjects"][theid])
 
-    #Assigning semantics
-         
+    #Assigning semantics to every face of every geometry         
     if 'semantics' in geom:
         values = geom['semantics']['values']
         
@@ -136,39 +142,33 @@ def geometry_renderer(data,vertices,theid,index):
             assign_properties(mat, surface)                   
             #Assigning materials on each object
             geom_obj.data.materials.append(mat)
-            #Assign color based on surface type
             
+            #Assign color based on surface type            
             if surface['type'] =='WallSurface':
                 mat.diffuse_color = (0.8,0.8,0.8,1)                            
-            
             elif surface['type'] =='RoofSurface':
                 mat.diffuse_color = (0.9,0.057,0.086,1)                                       
-            
             elif surface['type'] =='GroundSurface':
                 mat.diffuse_color = (0.507,0.233,0.036,1)                            
-            
             else:
                 mat.diffuse_color = (0,0,0,1)
-                
         geom_obj.data.update()                       
         values = clean_list(values)
-        i=0
         
+        i=0        
         for face in geom_obj.data.polygons:
             face.material_index = values[i]
             i+=1
 
     return geom_obj
-    
 
-def cityjson_parser(context, filepath, cityjson_import_settings):
-    
+def cityjson_parser(context, filepath):
     print("Importing CityJSON file...")
     #Deleting previous objects every time a new CityJSON file is imported
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=True)
             
-    #Open CityJSON file
+    #Read CityJSON file
     with open(filepath) as json_file:
         data = json.load(json_file)
         vertices=list() 
@@ -186,13 +186,16 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
                 z=vertex[2]*trans_param['scale'][2]+trans_param['translate'][2]
                 vertices.append((x,y,z))
         
+        #Translating coordinates to the axis origin
         translation = coord_translate_axis_origin(vertices)
+        
         #Updating vertices with new translated vertices
         vertices = translation[0]
-        #Creating empty meshes for every CityObjects and linking its geometries as children-meshes
+                
+        progress_max = len(data['CityObjects'])        
         progress = 0
-        progress_max = len(data['CityObjects'])
         start_render = time.time()
+        #Creating empty meshes for every CityObjects and linking its geometries as children-meshes
         for theid in data['CityObjects']:
             cityobject = bpy.data.objects.new(theid, None)
             cityobject = assign_properties(cityobject, data["CityObjects"][theid])
@@ -206,17 +209,18 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
             
             print ("Rendering: " + str(round(progress*100/progress_max, 1))+"% completed")    
         end_render = time.time()
-        
-        
-        #Assigning child building parts to parent buildings
+                
         progress = 0
-        start_hier = time.time()   
+        start_hier = time.time()
+        #Assigning child building parts to parent buildings   
         for theid in data['CityObjects']:
             if 'parents' in data['CityObjects'][theid]:
                 bpy.data.objects[theid].parent = bpy.data.objects[data['CityObjects'][theid]['parents'][0]]
             progress+=1
             print ("Building Hierarchy " + str(round(progress*100/progress_max, 1))+"% completed")
         end_hier= time.time()
+        
+        #Console output
         print ("\n")
         print("CityJSON file successfully imported!\n")
         print ("Total Rendering Time: ", round(end_render-start_render,2),"s")
@@ -224,8 +228,8 @@ def cityjson_parser(context, filepath, cityjson_import_settings):
         
     return {'FINISHED'}
 
-
 class ImportCityJSON(Operator, ImportHelper):
+    "Load a CityJSON file"
     bl_idname = "import_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Import CityJSON"
 
@@ -237,46 +241,11 @@ class ImportCityJSON(Operator, ImportHelper):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
-
-    # List of operator properties, the attributes will be assigned
-    # to the class instance from the operator settings before calling.
-    use_setting: BoolProperty(
-        name="Example Boolean",
-        description="Example Tooltip",
-        default=True,
-    )
-
-    #type: EnumProperty(
-    #    name="Example Enum",
-    #    description="Choose between two items",
-    #    items=(
-    #        ('OPT_A', "First Option", "Description one"),
-    #        ('OPT_B', "Second Option", "Description two"),
-    #    ),
-    #    default='OPT_A',
-    #)
-
     def execute(self, context):
-        return cityjson_parser(context, self.filepath, self.use_setting)
-
-
-
-
-def write_cityjson(context, filepath, cityjson_export_settings):
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump("No problem", f, ensure_ascii=False, indent=4)
-    #print("running write_some_data...")
-    #f = open(filepath, 'w', encoding='utf-8')
-    #f.write("Hello World %s" % use_some_setting)
-    #f.close()
-
-    return {'FINISHED'}
-
-
-#data ="Hello World"
-
+        return cityjson_parser(context, self.filepath) #self.use_setting)
 
 class ExportCityJSON(Operator, ExportHelper):
+    "Export scene as a CityJSON file"
     bl_idname = "export_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Export CityJSON"
 
@@ -288,35 +257,12 @@ class ExportCityJSON(Operator, ExportHelper):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
-
-    # List of operator properties, the attributes will be assigned
-    # to the class instance from the operator settings before calling.
-    use_setting: BoolProperty(
-        name="Example Boolean",
-        description="Example Tooltip",
-        default=True,
-    )
-
-    #type: EnumProperty(
-    #    name="Example Enum",
-    #    description="Choose between two items",
-    #    items=(
-    #        ('OPT_A', "First Option", "Description one"),
-    #        ('OPT_B', "Second Option", "Description two"),
-    #    ),
-    #    default='OPT_A',
-    #)
-
     def execute(self, context):
-        return write_cityjson(context, self.filepath, self.use_setting)
-
-
-
+        return write_cityjson(context, self.filepath)
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
     self.layout.operator(ExportCityJSON.bl_idname, text="CityJSON (.json)")
-
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_import(self, context):
@@ -328,7 +274,6 @@ def register():
     
     bpy.utils.register_class(ExportCityJSON)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
-
 
 def unregister():
     bpy.utils.unregister_class(ImportCityJSON)
