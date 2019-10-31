@@ -207,7 +207,7 @@ def cityjson_parser(context, filepath):
                 geom_obj.parent = cityobject
             progress+=1
             
-            print ("Rendering: " + str(round(progress*100/progress_max, 1))+"% completed")    
+            print ("Rendering: " + str(round(progress*100/progress_max, 1))+"% completed", end="\r")    
         end_render = time.time()
                 
         progress = 0
@@ -217,7 +217,7 @@ def cityjson_parser(context, filepath):
             if 'parents' in data['CityObjects'][theid]:
                 bpy.data.objects[theid].parent = bpy.data.objects[data['CityObjects'][theid]['parents'][0]]
             progress+=1
-            print ("Building Hierarchy " + str(round(progress*100/progress_max, 1))+"% completed")
+            print ("Building Hierarchy " + str(round(progress*100/progress_max, 1))+"% completed",end="\r")
         end_hier= time.time()
         
         #Console output
