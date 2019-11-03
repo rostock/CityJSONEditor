@@ -14,15 +14,18 @@ Trying to import really big datasets such as `New York` will take several minute
 
 ## How to install and use the parser
 
-1. Download the `CityJSON_Blender_parser.py` add-on and install it locally to Blender. Menu `Edit > Preferences >Add-ons`, and `Install`. 
+1. Download the `CityJSON_Blender_parser.py` add-on and install it locally to Blender.Run `Blender` and go to `Edit > Preferences >Add-ons`, and `Install`. Navigate to the directory where the `CityJSON_Blender_parser.py` is located select it and click `Install Add-on from File...`
 
-2. Make sure the add-on is enabled (by default it is disabled).
+2. Make sure the add-on is enabled (by default it is disabled). Tick the empty box next to the add-on's name. 
 
-3. Go to `File > Import > CityJSON` and navigate to the directory where the CityJSON file is stored and open it.
+3. Go to `File > Import > CityJSON (.json)` and navigate to the directory where the CityJSON file is stored and open it. 
+**\*Important: Make sure `Blender` viewport is in `Object Mode` before importing a new cityjson file.**
 
 4. In case you run `Blender` through the console, useful feedback is given in it, informing about the progress of the import procedure. 
 
-5. After a successful import, you should be able to see the model somewhere close to the axis origin. Rotation of the scene and zooming in and out might prove useful at this point, to locate the model.
+5. After a successful import, you should be able to see the model somewhere close to the axis origin. Rotation of the scene and zooming in and out might prove useful at this point, to locate the model. 
+In case you can't see the model, select an object from the `Outliner` (always in `Object Mode`) and click `View > Frame Selected`. 
+**\*Important: Make sure the object you are selecting is a `mesh object`. You can check that from the small pointing down triangle icon next to the object's name.** 
 
 6. For different `Collections` are created for `LoD 0 to 3` respectively. In case more than 1 geometries exist for the objects -representing different `LODs` (level of detail)-, every geometry is stored under the appropriate `Collection`, under the parent object (if there is any). You can display different `Collections` by clicking on the `eye icon` in the `Outliner` at the top right of the interface (see screenshot below). By default all the `LOD_x` collections should be visible right after importing the 3D City Model. In case you see any artefacts that is the reason! Choosing only one visible collection should remove all artefacts. 
 
