@@ -6,6 +6,12 @@ processing of CityJSON files
 
 import bpy
 
+def remove_scene_objects():
+    """Clears the scenes of any objects"""
+
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete(use_global=True)
+
 def clean_list(values):
     """Creates a list of non list in case lists nested in lists exist"""
 
