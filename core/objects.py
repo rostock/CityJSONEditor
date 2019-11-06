@@ -196,8 +196,8 @@ class CityJSONParser:
                 geom_obj = self.parse_geometry(theid, i)
                 geom_obj.parent = cityobject
                 new_objects.append(geom_obj)
-            progress += 1
 
+            progress += 1
             print("Importing: {percent}% completed"
                   .format(percent=round(progress * 100 / progress_max, 1)),
                   end="\r")
@@ -205,11 +205,6 @@ class CityJSONParser:
 
         progress = 0
         start_hier = time.time()
-
-        # Link everything to the scene
-        collection = bpy.context.scene.collection
-        for new_object in new_objects:
-            collection.objects.link(new_object)
 
         #Assigning child building parts to parent buildings
         for objid in self.data['CityObjects']:
@@ -223,10 +218,20 @@ class CityJSONParser:
                   end="\r")
         end_hier = time.time()
 
+        start_link = time.time()
+
+        # Link everything to the scene
+        collection = bpy.context.scene.collection
+        for new_object in new_objects:
+            collection.objects.link(new_object)
+        
+        end_link = time.time()
+
         #Console output
         print("\n")
         print("CityJSON file successfully imported!\n")
         print("Total Importing Time: ", round(end_import-start_import, 2), "s")
         print("Building Hierarchy: ", round(end_hier-start_hier, 2), "s")
+        print("Linking: ", round(end_link-start_link, 2), "s")
 
         return {'FINISHED'}
