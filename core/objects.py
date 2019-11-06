@@ -181,7 +181,7 @@ class CityJSONParser:
 
         progress_max = len(self.data['CityObjects'])
         progress = 0
-        start_render = time.time()
+        start_import = time.time()
 
         # Creating empty meshes for every CityObjects and linking its
         # geometries as children-meshes
@@ -198,10 +198,10 @@ class CityJSONParser:
                 new_objects.append(geom_obj)
             progress += 1
 
-            print("Rendering: {percent}% completed"
+            print("Importing: {percent}% completed"
                   .format(percent=round(progress * 100 / progress_max, 1)),
                   end="\r")
-        end_render = time.time()
+        end_import = time.time()
 
         progress = 0
         start_hier = time.time()
@@ -218,7 +218,7 @@ class CityJSONParser:
                 cityobjs[objid].parent = cityobjs[parent_id]
 
             progress += 1
-            print("Rendering: {percent}% completed"
+            print("Building hierarchy: {percent}% completed"
                   .format(percent=round(progress * 100 / progress_max, 1)),
                   end="\r")
         end_hier = time.time()
@@ -226,7 +226,7 @@ class CityJSONParser:
         #Console output
         print("\n")
         print("CityJSON file successfully imported!\n")
-        print("Total Rendering Time: ", round(end_render-start_render, 2), "s")
+        print("Total Importing Time: ", round(end_import-start_import, 2), "s")
         print("Building Hierarchy: ", round(end_hier-start_hier, 2), "s")
 
         return {'FINISHED'}
