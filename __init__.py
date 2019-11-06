@@ -1,3 +1,18 @@
+"""Main module of the CityJSON Blender addon"""
+
+import json
+import random
+import time
+
+import bpy
+from bpy.props import BoolProperty, EnumProperty, StringProperty
+from bpy.types import Operator
+from bpy_extras.io_utils import ExportHelper, ImportHelper
+
+from .core.material import BasicMaterialFactory
+from .core.utils import (assign_properties, clean_buffer, clean_list,
+                         coord_translate_axis_origin, original_coordinates)
+
 bl_info = {
     "name": "Import CityJSON files",
     "author": "Konstantinos Mastorakis",
@@ -9,81 +24,8 @@ bl_info = {
     "wiki_url": "",
     "category": "Import-Export",
 }
-import time
-import bpy
-import json
-import random
-from bpy_extras.io_utils import ImportHelper, ExportHelper
-from bpy.props import StringProperty, BoolProperty, EnumProperty
-from bpy.types import Operator
 
-material_colors = {
-    "WallSurface": (0.8,0.8,0.8,1),
-    "RoofSurface": (0.9,0.057,0.086,1),
-    "GroundSurface": (0.507,0.233,0.036,1)
-}
-
-def clean_list(values):
-    #Creates a list of non list in case lists nested in lists exist
-    while isinstance(values[0],list):
-        values = values[0]
-    return values
-
-def assign_properties(obj, props, prefix=[]):
-    #Assigns the custom properties to obj based on the props
-    for prop, value in props.items():
-        
-        if prop in ["geometry", "children", "parents"]:
-            continue
-
-        if isinstance(value, dict):
-            obj = assign_properties(obj, value, prefix + [prop])
-        
-        else:
-            obj[".".join(prefix + [prop])] = value
-
-    return obj
-
-def coord_translate_axis_origin(vertices):
-    #Translating function to origin
-    #Finding minimum value of x,y,z
-    minx = min(i[0] for i in vertices)
-    miny = min(i[1] for i in vertices)
-    minz = min(i[2] for i in vertices)
-    
-    #Calculating new coordinates
-    translated_x = [i[0]-minx for i in vertices]
-    translated_y = [i[1]-miny for i in vertices]
-    translated_z = [i[2]-minz for i in vertices]
-    
-    return (tuple(zip(translated_x,translated_y,translated_z)),minx,miny,minz)
-
-
-def original_coordinates(vertices,minx,miny,minz):
-    #Translating back to original coords 
-    #Calculating original coordinates
-    original_x = [i[0]+minx for i in vertices]
-    original_y = [i[1]+miny for i in vertices]
-    original_z = [i[2]+minz for i in vertices]
-    
-    return (tuple(zip(original_x,original_y,original_z)))
-
-def clean_buffer(vertices, bounds):
-    #Cleans the vertices index from unused vertices3
-    new_bounds = list()
-    new_vertices = list()
-    i=0
-    for bound in bounds:
-        new_bound = list()
-        
-        for j in range(len(bound)):
-            new_vertices.append(vertices[bound[j]])
-            new_bound.append(i)
-            i=i+1
-        
-        new_bounds.append(tuple(new_bound))
-    
-    return new_vertices, new_bounds
+material_factory = BasicMaterialFactory()
 
 def write_cityjson(context, filepath):
     #Will write all scene data in CityJSON format"
@@ -93,39 +35,11 @@ def write_cityjson(context, filepath):
     return {'FINISHED'}
 
 def get_geometry_name(objid, geom, index):
+    """Returns the name of the provided geometry"""
     if 'lod' in geom:
         return "{index}: [LoD{lod}] {name}".format(name=objid, lod=geom['lod'], index=index)
     else:
         return "{index}: [GeometryInstance] {name}".format(name=objid, index=index)
-
-def check_material(material, surface):
-    """Checks if the material can represent the provided surface"""
-
-    if not material.name.startswith(surface['type']):
-        return False
-    
-    # TODO: Add logic here to check for semantic surface attributes
-
-    return True
-
-def get_material(surface):
-    """Returns the material that corresponds to the semantic surface"""
-    # matches = [m for m in bpy.data.materials if check_material(m, surface)]
-
-    # if len(matches) > 0:
-    #     return matches[0]
-    
-    mat = bpy.data.materials.new(name=surface['type'])
-
-    assign_properties(mat, surface)
-
-    #Assign color based on surface type    
-    if surface['type'] in material_colors:
-        mat.diffuse_color = material_colors[surface["type"]]                            
-    else:
-        mat.diffuse_color = (0,0,0,1)
-
-    return mat
 
 def create_empty_object(name):
     """Returns an empty blender object"""
@@ -139,14 +53,14 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 
     mesh_data = None
 
-    if len(faces):
+    if faces:
         mesh_data = bpy.data.meshes.new(name)
 
         for material in materials:
             mesh_data.materials.append(material)
 
         indices = [i for face in faces for i in face]
-        
+
         mesh_data.vertices.add(len(vertices))
         mesh_data.loops.add(len(indices))
         mesh_data.polygons.add(len(faces))
@@ -167,20 +81,23 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
         if len(material_indices) == len(faces):
             mesh_data.polygons.foreach_set("material_index", material_indices)
         elif len(material_indices) > len(faces):
-            print("Object {name} has {num_faces} faces but {num_surfaces} semantic surfaces!".format(name=name, num_faces=len(faces), num_surfaces=len(material_indices)))
+            print("Object {name} has {num_faces} faces but {num_surfaces} semantic surfaces!"
+                  .format(name=name,
+                          num_faces=len(faces),
+                          num_surfaces=len(material_indices)))
 
         mesh_data.update()
-        
+
     new_object = bpy.data.objects.new(name, mesh_data)
 
     return new_object
 
-def parse_geometry(data,vertices,theid,index):
+def parse_geometry(data, vertices, theid, index):
     #Parsing the boundary data of every geometry
     bound=list()                
-    
+
     geom = data['CityObjects'][theid]['geometry'][index]
-    
+
     #Checking how nested the geometry is i.e what kind of 3D geometry it contains
     if((geom['type']=='MultiSurface') or (geom['type'] == 'CompositeSurface')):
         for face in geom['boundaries']:
@@ -210,7 +127,7 @@ def parse_geometry(data,vertices,theid,index):
         values = geom['semantics']['values']
         
         for surface in geom['semantics']['surfaces']:
-            mats.append(get_material(surface))
+            mats.append(material_factory.get_material(surface))
                        
         values = clean_list(values)
         
