@@ -9,7 +9,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from .core.material import BasicMaterialFactory
+from .core.material import BasicMaterialFactory, ReuseMaterialFactory
 from .core.utils import (assign_properties, clean_buffer, clean_list,
                          coord_translate_axis_origin, original_coordinates)
 
@@ -25,13 +25,11 @@ bl_info = {
     "category": "Import-Export",
 }
 
-material_factory = BasicMaterialFactory()
-
 def write_cityjson(context, filepath):
     #Will write all scene data in CityJSON format"
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump("No problem", f, ensure_ascii=False, indent=4)
-    
+
     return {'FINISHED'}
 
 def get_geometry_name(objid, geom, index):
@@ -92,9 +90,9 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 
     return new_object
 
-def parse_geometry(data, vertices, theid, index):
+def parse_geometry(data, vertices, theid, index, material_factory):
     #Parsing the boundary data of every geometry
-    bound=list()                
+    bound=list()
 
     geom = data['CityObjects'][theid]['geometry'][index]
 
@@ -104,49 +102,54 @@ def parse_geometry(data, vertices, theid, index):
             # This if - else statement ignores all the holes if any in any geometry
             if len(face)>0:
                 bound.append(tuple(face[0]))
-        
+
     elif (geom['type']=='Solid'):
         for shell in geom['boundaries']:
             for face in shell:
                 if (len(face)>0):
                     bound.append(tuple(face[0]))
-                                                    
+
     elif (geom['type']=='MultiSolid'):
         for solid in geom['boundaries']:
             for shell in solid:
                 for face in shell:
                     if (len(face)>0):
                         bound.append(tuple(face[0]))
-    
+
     temp_vertices, temp_bound = clean_buffer(vertices, bound)
 
     #Assigning semantics to every face of every geometry
     mats = []
-    values = []  
+    values = []
     if 'semantics' in geom:
         values = geom['semantics']['values']
-        
+
         for surface in geom['semantics']['surfaces']:
             mats.append(material_factory.get_material(surface))
-                       
+
         values = clean_list(values)
-        
+
     geom_obj = create_mesh_object(get_geometry_name(theid, geom, index), temp_vertices, temp_bound, mats, values)
 
     return geom_obj
 
-def cityjson_parser(context, filepath):
+def cityjson_parser(context, filepath, reuse_materials=True):
+    if reuse_materials == True:
+        material_factory = ReuseMaterialFactory()
+    else:
+        material_factory = BasicMaterialFactory()
+
     print("Importing CityJSON file...")
     #Deleting previous objects every time a new CityJSON file is imported
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=True)
-            
+
     #Read CityJSON file
     with open(filepath) as json_file:
         data = json.load(json_file)
-        vertices=list() 
-           
-        #Checking if coordinates need to be transformed and transforming if necessary 
+        vertices=list()
+
+        #Checking if coordinates need to be transformed and transforming if necessary
         if 'transform' not in data:
             for vertex in data['vertices']:
                 vertices.append(tuple(vertex))
@@ -158,17 +161,17 @@ def cityjson_parser(context, filepath):
                 y=vertex[1]*trans_param['scale'][1]+trans_param['translate'][1]
                 z=vertex[2]*trans_param['scale'][2]+trans_param['translate'][2]
                 vertices.append((x,y,z))
-        
+
         #Translating coordinates to the axis origin
         translation = coord_translate_axis_origin(vertices)
-        
+
         #Updating vertices with new translated vertices
         vertices = translation[0]
 
         new_objects = []
         cityobjs = {}
-                
-        progress_max = len(data['CityObjects'])        
+
+        progress_max = len(data['CityObjects'])
         progress = 0
         start_render = time.time()
         #Creating empty meshes for every CityObjects and linking its geometries as children-meshes
@@ -177,38 +180,40 @@ def cityjson_parser(context, filepath):
             cityobject = assign_properties(cityobject, data["CityObjects"][theid])
             new_objects.append(cityobject)
             cityobjs[theid] = cityobject
-                        
+
             for i in range(len(data['CityObjects'][theid]['geometry'])):
-                geom_obj = parse_geometry(data,vertices,theid,i)
+                geom_obj = parse_geometry(data, vertices, theid, i, material_factory)
                 geom_obj.parent = cityobject
                 new_objects.append(geom_obj)
-            progress+=1
-            
-            print ("Rendering: " + str(round(progress*100/progress_max, 1))+"% completed", end="\r")    
+            progress += 1
+
+            print("Rendering: {percent}% completed"
+                  .format(percent=round(progress*100/progress_max, 1)),
+                  end="\r")
         end_render = time.time()
-                
+
         progress = 0
         start_hier = time.time()
-        
+
         # Link everything to the scene
         collection = bpy.context.scene.collection
         for new_object in new_objects:
             collection.objects.link(new_object)
 
-        #Assigning child building parts to parent buildings   
+        #Assigning child building parts to parent buildings
         for theid in data['CityObjects']:
             if 'parents' in data['CityObjects'][theid]:
                 cityobjs[theid].parent = cityobjs[data['CityObjects'][theid]['parents'][0]]
-            progress+=1
+            progress += 1
             print ("Building Hierarchy " + str(round(progress*100/progress_max, 1))+"% completed",end="\r")
-        end_hier= time.time()
-        
+        end_hier = time.time()
+
         #Console output
         print ("\n")
         print("CityJSON file successfully imported!\n")
         print ("Total Rendering Time: ", round(end_render-start_render,2),"s")
         print ("Building Hierarchy: ", round(end_hier-start_hier,2),"s")
-        
+
     return {'FINISHED'}
 
 class ImportCityJSON(Operator, ImportHelper):
@@ -225,12 +230,20 @@ class ImportCityJSON(Operator, ImportHelper):
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
 
+    reuse_materials: BoolProperty(
+        name="Reuse materials",
+        description="Use common materials according to surface type",
+        default=True
+    )
+
     def execute(self, context):
-        return cityjson_parser(context, self.filepath) #self.use_setting)
+        """Executes the import process"""
+
+        return cityjson_parser(context, self.filepath, self.reuse_materials)
 
 class ExportCityJSON(Operator, ExportHelper):
     "Export scene as a CityJSON file"
-    bl_idname = "cityjson.export_file"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "cityjson.export_file"
     bl_label = "Export CityJSON"
 
     # ExportHelper mixin class uses this
@@ -245,25 +258,37 @@ class ExportCityJSON(Operator, ExportHelper):
     def execute(self, context):
         return write_cityjson(context, self.filepath)
 
+classes = (
+    ImportCityJSON,
+    ExportCityJSON
+)
+
 def menu_func_export(self, context):
+    """Defines the menu item for CityJSON import"""
+
     self.layout.operator(ExportCityJSON.bl_idname, text="CityJSON (.json)")
 
 def menu_func_import(self, context):
+    """Defines the menu item for CityJSON export"""
     self.layout.operator(ImportCityJSON.bl_idname, text="CityJSON (.json)")
-    
+
 def register():
-    bpy.utils.register_class(ImportCityJSON)
+    """Registers the classes and functions of the addon"""
+
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-    
-    bpy.utils.register_class(ExportCityJSON)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 def unregister():
-    bpy.utils.unregister_class(ImportCityJSON)
+    """Unregisters the classes and functions of the addon"""
+
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
-    
-    bpy.utils.unregister_class(ExportCityJSON)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
 if __name__ == "__main__":
     register()
