@@ -224,7 +224,7 @@ class CityJSONParser:
         collection = bpy.context.scene.collection
         for new_object in new_objects:
             collection.objects.link(new_object)
-        
+
         end_link = time.time()
 
         #Console output

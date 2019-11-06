@@ -1,7 +1,6 @@
 """Main module of the CityJSON Blender addon"""
 
 import json
-import random
 import time
 
 import bpy

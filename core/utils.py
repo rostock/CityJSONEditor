@@ -9,8 +9,13 @@ import bpy
 def remove_scene_objects():
     """Clears the scenes of any objects"""
 
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.object.delete(use_global=True)
+    # Deleting previous objects every time a new CityJSON file is imported
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete()
+
+    # Deleting previously existing collections
+    for collection in bpy.data.collections:
+        bpy.data.collections.remove(collection)
 
 def clean_list(values):
     """Creates a list of non list in case lists nested in lists exist"""
