@@ -247,21 +247,24 @@ def cityjson_parser(context, filepath):
         
         #Updating vertices with new translated vertices
         vertices = translation[0]
+
+        new_objects = []
+        cityobjs = {}
                 
         progress_max = len(data['CityObjects'])        
         progress = 0
         start_render = time.time()
         #Creating empty meshes for every CityObjects and linking its geometries as children-meshes
         for theid in data['CityObjects']:
-            cityobject = bpy.data.objects.new(theid, None)
+            cityobject = create_empty_object(theid)
             cityobject = assign_properties(cityobject, data["CityObjects"][theid])
-            scene = bpy.context.scene
-            scene.collection.objects.link(cityobject)
+            new_objects.append(cityobject)
+            cityobjs[theid] = cityobject
                         
             for i in range(len(data['CityObjects'][theid]['geometry'])):
                 geom_obj = parse_geometry(data,vertices,theid,i)
                 geom_obj.parent = cityobject
-                scene.collection.objects.link(geom_obj)
+                new_objects.append(geom_obj)
             progress+=1
             
             print ("Rendering: " + str(round(progress*100/progress_max, 1))+"% completed", end="\r")    
@@ -269,10 +272,16 @@ def cityjson_parser(context, filepath):
                 
         progress = 0
         start_hier = time.time()
+        
+        # Link everything to the scene
+        collection = bpy.context.scene.collection
+        for new_object in new_objects:
+            collection.objects.link(new_object)
+
         #Assigning child building parts to parent buildings   
         for theid in data['CityObjects']:
             if 'parents' in data['CityObjects'][theid]:
-                bpy.data.objects[theid].parent = bpy.data.objects[data['CityObjects'][theid]['parents'][0]]
+                cityobjs[theid].parent = cityobjs[data['CityObjects'][theid]['parents'][0]]
             progress+=1
             print ("Building Hierarchy " + str(round(progress*100/progress_max, 1))+"% completed",end="\r")
         end_hier= time.time()
