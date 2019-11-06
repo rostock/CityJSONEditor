@@ -230,7 +230,7 @@ def cityjson_parser(context, filepath):
 
 class ImportCityJSON(Operator, ImportHelper):
     "Load a CityJSON file"
-    bl_idname = "import_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "cityjson.import_file"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Import CityJSON"
 
     # ImportHelper mixin class uses this
@@ -241,12 +241,13 @@ class ImportCityJSON(Operator, ImportHelper):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
+
     def execute(self, context):
         return cityjson_parser(context, self.filepath) #self.use_setting)
 
 class ExportCityJSON(Operator, ExportHelper):
     "Export scene as a CityJSON file"
-    bl_idname = "export_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "cityjson.export_file"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Export CityJSON"
 
     # ExportHelper mixin class uses this
@@ -257,14 +258,13 @@ class ExportCityJSON(Operator, ExportHelper):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
+
     def execute(self, context):
         return write_cityjson(context, self.filepath)
 
-# Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
     self.layout.operator(ExportCityJSON.bl_idname, text="CityJSON (.json)")
 
-# Only needed if you want to add into a dynamic menu
 def menu_func_import(self, context):
     self.layout.operator(ImportCityJSON.bl_idname, text="CityJSON (.json)")
     
@@ -284,4 +284,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-    bpy.ops.import_test.some_data('INVOKE_DEFAULT')
