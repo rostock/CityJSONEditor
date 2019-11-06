@@ -7,14 +7,24 @@ based on the semantics of the CityJSON file.
 import bpy
 from .utils import assign_properties
 
-material_colors = {
-    "WallSurface": (0.8, 0.8, 0.8, 1),
-    "RoofSurface": (0.9, 0.057, 0.086, 1),
-    "GroundSurface": (0.507, 0.233, 0.036, 1)
-}
-
 class BasicMaterialFactory:
-    """A factory that creates a simple mateirla for every city object"""
+    """A factory that creates a simple material for every city object"""
+
+    material_colors = {
+        "WallSurface": (0.8, 0.8, 0.8, 1),
+        "RoofSurface": (0.9, 0.057, 0.086, 1),
+        "GroundSurface": (0.507, 0.233, 0.036, 1)
+    }
+
+    default_color = (0, 0, 0, 1)
+
+    def get_surface_color(self, surface_type):
+        """Returns the material color of the appropriate surface type"""
+
+        if surface_type in self.material_colors:
+            return self.material_colors[surface_type]
+
+        return self.default_color
 
     def create_material(self, surface):
         """Returns a new material based on the semantic surface of the object"""
@@ -22,11 +32,7 @@ class BasicMaterialFactory:
 
         assign_properties(mat, surface)
 
-        #Assign color based on surface type
-        if surface['type'] in material_colors:
-            mat.diffuse_color = material_colors[surface["type"]]
-        else:
-            mat.diffuse_color = (0, 0, 0, 1)
+        mat.diffuse_color = self.get_surface_color(surface['type'])
 
         return mat
 
@@ -39,6 +45,14 @@ class BasicMaterialFactory:
         # TODO: Add logic here to check for semantic surface attributes
 
         return True
+
+    def get_material(self, surface):
+        """Returns the material that corresponds to the semantic surface"""
+
+        return self.create_material(surface)
+
+class ReuseMaterialFactory(BasicMaterialFactory):
+    """A class that re-uses a material with similar semantics"""
 
     def get_material(self, surface):
         """Returns the material that corresponds to the semantic surface"""
