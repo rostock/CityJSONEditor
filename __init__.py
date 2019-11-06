@@ -17,7 +17,11 @@ from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
-
+material_colors = {
+    "WallSurface": (0.8,0.8,0.8,1),
+    "RoofSurface": (0.9,0.057,0.086,1),
+    "GroundSurface": (0.507,0.233,0.036,1)
+}
 
 def clean_list(values):
     #Creates a list of non list in case lists nested in lists exist
@@ -88,19 +92,97 @@ def write_cityjson(context, filepath):
     
     return {'FINISHED'}
 
-def geometry_renderer(data,vertices,theid,index):
+def get_geometry_name(objid, geom, index):
+    if 'lod' in geom:
+        return "{index}: [LoD{lod}] {name}".format(name=objid, lod=geom['lod'], index=index)
+    else:
+        return "{index}: [GeometryInstance] {name}".format(name=objid, index=index)
+
+def check_material(material, surface):
+    """Checks if the material can represent the provided surface"""
+
+    if not material.name.startswith(surface['type']):
+        return False
+    
+    # TODO: Add logic here to check for semantic surface attributes
+
+    return True
+
+def get_material(surface):
+    """Returns the material that corresponds to the semantic surface"""
+    # matches = [m for m in bpy.data.materials if check_material(m, surface)]
+
+    # if len(matches) > 0:
+    #     return matches[0]
+    
+    mat = bpy.data.materials.new(name=surface['type'])
+
+    assign_properties(mat, surface)
+
+    #Assign color based on surface type    
+    if surface['type'] in material_colors:
+        mat.diffuse_color = material_colors[surface["type"]]                            
+    else:
+        mat.diffuse_color = (0,0,0,1)
+
+    return mat
+
+def create_empty_object(name):
+    """Returns an empty blender object"""
+
+    new_object = bpy.data.objects.new(name, None)
+
+    return new_object
+
+def create_mesh_object(name, vertices, faces, materials=[], material_indices=[]):
+    """Returns a mesh blender object"""
+
+    mesh_data = None
+
+    if len(faces):
+        mesh_data = bpy.data.meshes.new(name)
+
+        for material in materials:
+            mesh_data.materials.append(material)
+
+        indices = [i for face in faces for i in face]
+        
+        mesh_data.vertices.add(len(vertices))
+        mesh_data.loops.add(len(indices))
+        mesh_data.polygons.add(len(faces))
+
+        coords = [c for v in vertices for c in v]
+
+        loop_totals = [len(face) for face in faces]
+        loop_starts = []
+        i = 0
+        for face in faces:
+            loop_starts.append(i)
+            i += len(face)
+
+        mesh_data.vertices.foreach_set("co", coords)
+        mesh_data.loops.foreach_set("vertex_index", indices)
+        mesh_data.polygons.foreach_set("loop_start", loop_starts)
+        mesh_data.polygons.foreach_set("loop_total", loop_totals)
+        if len(material_indices) == len(faces):
+            mesh_data.polygons.foreach_set("material_index", material_indices)
+        elif len(material_indices) > len(faces):
+            print("Object {name} has {num_faces} faces but {num_surfaces} semantic surfaces!".format(name=name, num_faces=len(faces), num_surfaces=len(material_indices)))
+
+        mesh_data.update()
+        
+    new_object = bpy.data.objects.new(name, mesh_data)
+
+    return new_object
+
+def parse_geometry(data,vertices,theid,index):
     #Parsing the boundary data of every geometry
     bound=list()                
     
     geom = data['CityObjects'][theid]['geometry'][index]
-    if 'lod' in geom:
-        prefix = "LOD_" + str(geom['lod'])
-    else:
-        prefix = "no_LOD_"+str(index)
     
     #Checking how nested the geometry is i.e what kind of 3D geometry it contains
     if((geom['type']=='MultiSurface') or (geom['type'] == 'CompositeSurface')):
-    
         for face in geom['boundaries']:
             # This if - else statement ignores all the holes if any in any geometry
             if len(face)>0:
@@ -120,45 +202,19 @@ def geometry_renderer(data,vertices,theid,index):
                         bound.append(tuple(face[0]))
     
     temp_vertices, temp_bound = clean_buffer(vertices, bound)
-    
-    #Visualization part
-    geometryname = prefix+"_"+ theid
-    mesh_data = bpy.data.meshes.new("mesh")
-    mesh_data.from_pydata(temp_vertices, [], temp_bound)
-    mesh_data.update()    
-    geom_obj = bpy.data.objects.new(geometryname, mesh_data)
-    scene = bpy.context.scene
-    scene.collection.objects.link(geom_obj)
-    
-    #Assigning attributes to geometries
-    geom_obj = assign_properties(geom_obj, data["CityObjects"][theid])
 
-    #Assigning semantics to every face of every geometry         
+    #Assigning semantics to every face of every geometry
+    mats = []
+    values = []  
     if 'semantics' in geom:
         values = geom['semantics']['values']
         
         for surface in geom['semantics']['surfaces']:
-            mat = bpy.data.materials.new(name="Material")
-            assign_properties(mat, surface)                   
-            #Assigning materials on each object
-            geom_obj.data.materials.append(mat)
-            
-            #Assign color based on surface type            
-            if surface['type'] =='WallSurface':
-                mat.diffuse_color = (0.8,0.8,0.8,1)                            
-            elif surface['type'] =='RoofSurface':
-                mat.diffuse_color = (0.9,0.057,0.086,1)                                       
-            elif surface['type'] =='GroundSurface':
-                mat.diffuse_color = (0.507,0.233,0.036,1)                            
-            else:
-                mat.diffuse_color = (0,0,0,1)
-        geom_obj.data.update()                       
+            mats.append(get_material(surface))
+                       
         values = clean_list(values)
         
-        i=0        
-        for face in geom_obj.data.polygons:
-            face.material_index = values[i]
-            i+=1
+    geom_obj = create_mesh_object(get_geometry_name(theid, geom, index), temp_vertices, temp_bound, mats, values)
 
     return geom_obj
 
@@ -203,8 +259,9 @@ def cityjson_parser(context, filepath):
             scene.collection.objects.link(cityobject)
                         
             for i in range(len(data['CityObjects'][theid]['geometry'])):
-                geom_obj = geometry_renderer(data,vertices,theid,i)
+                geom_obj = parse_geometry(data,vertices,theid,i)
                 geom_obj.parent = cityobject
+                scene.collection.objects.link(geom_obj)
             progress+=1
             
             print ("Rendering: " + str(round(progress*100/progress_max, 1))+"% completed", end="\r")    
