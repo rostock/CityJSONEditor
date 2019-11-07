@@ -145,16 +145,7 @@ class CityJSONParser:
 
         temp_vertices, temp_bound = clean_buffer(self.vertices, bound)
 
-        #Assigning semantics to every face of every geometry
-        mats = []
-        values = []
-        if 'semantics' in geom:
-            values = geom['semantics']['values']
-
-            for surface in geom['semantics']['surfaces']:
-                mats.append(self.material_factory.get_material(surface))
-
-            values = clean_list(values)
+        mats, values = self.material_factory.get_materials(geom)
 
         geom_obj = create_mesh_object(get_geometry_name(theid, geom, index),
                                       temp_vertices,

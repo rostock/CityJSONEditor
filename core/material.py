@@ -5,7 +5,7 @@ based on the semantics of the CityJSON file.
 """
 
 import bpy
-from .utils import assign_properties
+from .utils import assign_properties, clean_list
 
 class BasicMaterialFactory:
     """A factory that creates a simple material for every city object"""
@@ -50,6 +50,19 @@ class BasicMaterialFactory:
         """Returns the material that corresponds to the semantic surface"""
 
         return self.create_material(surface)
+    
+    def get_materials(self, geom):
+        mats = []
+        values = []
+        if 'semantics' in geom:
+            values = geom['semantics']['values']
+
+            for surface in geom['semantics']['surfaces']:
+                mats.append(self.get_material(surface))
+
+            values = clean_list(values)
+        
+        return (mats, values)
 
 class ReuseMaterialFactory(BasicMaterialFactory):
     """A class that re-uses a material with similar semantics"""
