@@ -5,7 +5,8 @@ import time
 
 import bpy
 
-from .material import BasicMaterialFactory, ReuseMaterialFactory
+from .material import (BasicMaterialFactory, ReuseMaterialFactory,
+                       CityObjectTypeMaterialFactory)
 from .utils import (assign_properties, clean_buffer, clean_list,
                     coord_translate_axis_origin, remove_scene_objects)
 
@@ -71,17 +72,20 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
 
-    def __init__(self, filepath, reuse_materials=True, clear_scene=True):
+    def __init__(self, filepath, material_type, reuse_materials=True, clear_scene=True):
         self.filepath = filepath
         self.clear_scene = clear_scene
 
         self.data = {}
         self.vertices = []
 
-        if reuse_materials:
-            self.material_factory = ReuseMaterialFactory()
+        if material_type == 'SURFACES':
+            if reuse_materials:
+                self.material_factory = ReuseMaterialFactory()
+            else:
+                self.material_factory = BasicMaterialFactory()
         else:
-            self.material_factory = BasicMaterialFactory()
+            self.material_factory = CityObjectTypeMaterialFactory()
 
     def load_data(self):
         """Loads the CityJSON data from the file"""
@@ -118,11 +122,9 @@ class CityJSONParser:
         # Updating vertices with new translated vertices
         self.vertices = translation[0]
 
-    def parse_geometry(self, theid, index):
+    def parse_geometry(self, theid, obj, geom, index):
         """Returns a mesh object for the provided geometry"""
         bound = []
-
-        geom = self.data['CityObjects'][theid]['geometry'][index]
 
         # Checking how nested the geometry is i.e what kind of 3D
         # geometry it contains
@@ -145,7 +147,8 @@ class CityJSONParser:
 
         temp_vertices, temp_bound = clean_buffer(self.vertices, bound)
 
-        mats, values = self.material_factory.get_materials(geom)
+        mats, values = self.material_factory.get_materials(cityobject=obj,
+                                                           geometry=geom)
 
         geom_obj = create_mesh_object(get_geometry_name(theid, geom, index),
                                       temp_vertices,
@@ -176,15 +179,15 @@ class CityJSONParser:
 
         # Creating empty meshes for every CityObjects and linking its
         # geometries as children-meshes
-        for theid in self.data['CityObjects']:
-            cityobject = create_empty_object(theid)
+        for objid, obj in self.data['CityObjects'].items():
+            cityobject = create_empty_object(objid)
             cityobject = assign_properties(cityobject,
-                                           self.data["CityObjects"][theid])
+                                           obj)
             new_objects.append(cityobject)
-            cityobjs[theid] = cityobject
+            cityobjs[objid] = cityobject
 
-            for i, _ in enumerate(self.data['CityObjects'][theid]['geometry']):
-                geom_obj = self.parse_geometry(theid, i)
+            for i, geom in enumerate(obj['geometry']):
+                geom_obj = self.parse_geometry(objid, obj, geom, i)
                 geom_obj.parent = cityobject
                 new_objects.append(geom_obj)
 
@@ -198,9 +201,9 @@ class CityJSONParser:
         start_hier = time.time()
 
         #Assigning child building parts to parent buildings
-        for objid in self.data['CityObjects']:
-            if 'parents' in self.data['CityObjects'][objid]:
-                parent_id = self.data['CityObjects'][objid]['parents'][0]
+        for objid, obj in self.data['CityObjects'].items():
+            if 'parents' in obj:
+                parent_id = obj['parents'][0]
                 cityobjs[objid].parent = cityobjs[parent_id]
 
             progress += 1

@@ -43,6 +43,18 @@ class ImportCityJSON(Operator, ImportHelper):
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
 
+    material_type: EnumProperty(
+        name="Materials' type",
+        items=(('SURFACES', "Surfaces",
+                "Creates materials based on semantic surface types"),
+               ('CITY_OBJECTS', "City Objects",
+                "Creates materials based on the type of city object")),
+        description=(
+            "Create materials based on city object or semantic"
+            " surfaces."
+        )
+    )
+
     reuse_materials: BoolProperty(
         name="Reuse materials",
         description="Use common materials according to surface type",
@@ -59,6 +71,7 @@ class ImportCityJSON(Operator, ImportHelper):
         """Executes the import process"""
 
         parser = CityJSONParser(self.filepath,
+                                material_type=self.material_type,
                                 reuse_materials=self.reuse_materials,
                                 clear_scene=self.clean_scene)
 
