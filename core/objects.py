@@ -156,6 +156,9 @@ class CityJSONParser:
                                       mats,
                                       values)
 
+        if 'lod' in geom:
+            geom_obj['lod'] = geom['lod']
+
         return geom_obj
 
     def execute(self):
