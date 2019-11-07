@@ -69,6 +69,17 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 
     return new_object
 
+def get_collection(collection_name):
+    """Returns a collection with the given name"""
+
+    if collection_name in bpy.data.collections:
+        return bpy.data.collections[collection_name]
+    
+    new_collection = bpy.data.collections.new(collection_name)
+    bpy.context.scene.collection.children.link(new_collection)
+
+    return new_collection
+
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
 
@@ -220,7 +231,11 @@ class CityJSONParser:
         # Link everything to the scene
         collection = bpy.context.scene.collection
         for new_object in new_objects:
-            collection.objects.link(new_object)
+            if 'lod' in new_object:
+                get_collection("LoD{}".format(new_object['lod'])).objects.link(new_object)
+            else:
+                collection.objects.link(new_object)
+
 
         end_link = time.time()
 
