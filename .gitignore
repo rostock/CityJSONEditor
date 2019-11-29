@@ -126,3 +126,5 @@ dmypy.json
 
 .noseids
 .vscode/
+
+test.json
