@@ -22,23 +22,6 @@ bl_info = {
     "category": "Import-Export",
 }
 
-minimal_json = {
-    "type": "CityJSON",
-    "version": "1.0",
-    "extensions": {},
-    "metadata": {},
-    "CityObjects": {}
-}
-
-
-
-def write_cityjson(context, filepath):
-    #Will write all scene data in CityJSON format"
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(minimal_json, f, ensure_ascii=False, indent=4)
-
-    return {'FINISHED'}
-
 class ImportCityJSON(Operator, ImportHelper):
     "Load a CityJSON file"
     bl_idname = "cityjson.import_file"  # important since its how bpy.ops.import_test.some_data is constructed

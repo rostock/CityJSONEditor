@@ -21,39 +21,48 @@ def cityJSON_exporter(context, filepath):
     "vertices":[]
 }
     #Load objects
-    for object in bpy.data.objects:
+    vertex_index_offset = 0
+    for city_object in bpy.data.objects:
         #Exporting only MESH objects"
-        if object.type == 'MESH':
-            
-            #Accessing specific object's vertices coordinates 
-            specific_object_verts = object.data.vertices
-            #Accessing specific object's faces
-            specific_object_faces =object.data.polygons
-            
-            #Create a list of vertices to store the global vertices of all objects
-            vertices = list()
-            
-            #Accessing the object's vertices and storing them in the 'minimal_json' dictionary if not already there
-            #In case of two/more objects using the same vertex, the vertex may already exist in the list
-            for i in range(len(specific_object_verts)):
-                if specific_object_verts[i] not in vertices:
-                    vert_coords = object.data.vertices[i].co
-                    minimal_json.setdefault("vertices", []).append([vert_coords[0],vert_coords[1],vert_coords[2]])
-                    vertices.append(specific_object_verts[i])
-            
+        if city_object.type == 'MESH':
+
             #Storing geometry of object | The structure of the CityJSON file is partially hardcoded here for prototyping reasons
-            
-            name = object.name
+            name = city_object.name
             minimal_json["CityObjects"].update({name:{}})
             minimal_json["CityObjects"][name].update({'type':"Building","attributes":{},"geometry":[]})
             minimal_json["CityObjects"][name].setdefault("geometry", []).append({'type':"MultiSurface","boundaries":[]})
             minimal_json["CityObjects"][name]["geometry"][0]["lod"]=2
-
-            #Browsing through faces and their vertices by face
+            
+            #Accessing specific object's vertices coordinates 
+            specific_object_verts = city_object.data.vertices
+            #Accessing specific object's faces
+            specific_object_faces =city_object.data.polygons
+            
+            #Browsing through faces and their vertices
             for face in specific_object_faces:
                 minimal_json["CityObjects"][name]["geometry"][0]["boundaries"].append([[]])
                 for i in range(len(specific_object_faces[face.index].vertices)):
-                    minimal_json["CityObjects"][name]["geometry"][0]["boundaries"][face.index][0].append(specific_object_faces[face.index].vertices[i])
+                    original_index = specific_object_faces[face.index].vertices[i]
+                    vertices_index = original_index + vertex_index_offset
+                    minimal_json["CityObjects"][name]["geometry"][0]["boundaries"][face.index][0].append(vertices_index)
+                     
+            #Create a list of vertices to store the global vertices of all objects
+            vertices = list()
+            #Accessing the object's vertices and storing them in the 'minimal_json' dictionary if not already there
+            #In case of two/more objects using the same vertex, the vertex may already exist in the list
+            for i in range(len(specific_object_verts)):
+                if specific_object_verts[i] not in vertices:
+                    v = city_object.data.vertices[i]
+                    #Calculating coordinates with transformation
+                    co_final = city_object.matrix_world @ v.co
+                    minimal_json.setdefault("vertices", []).append([co_final[0],co_final[1],co_final[2]])
+                    vertices.append(co_final)
+                    vertex_index_offset +=1
+                    
+            
+            
+
+            
                     
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
