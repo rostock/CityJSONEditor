@@ -4,6 +4,7 @@ import json
 import time
 
 import bpy
+import idprop
 
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
                        CityObjectTypeMaterialFactory)
@@ -18,68 +19,74 @@ def cityJSON_exporter(context, filepath):
     "extensions": {},
     "metadata": {},
     "CityObjects": {},
-    "vertices":[]
-}   
-
-    for city_object in bpy.data.objects:
-       if city_object.type=='EMPTY':
-           name=city_object.name
-           minimal_json["CityObjects"].update({name:{}})
-           minimal_json["CityObjects"][name].update({'geometry':{}})
-
-           
-           #Get all the custom properties of the object
-           cp=city_object.items()
-           for prop in cp:
-               split = prop[0].split(".")
-               # print (split)
-                               
-               if len(split)==3:
-                   if not (split[0] in  minimal_json["CityObjects"][name]):
-                       minimal_json["CityObjects"][name].update({split[0]:{}})
-                   
-                   if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):    
-                       minimal_json["CityObjects"][name][split[0]].update({split[1]:{}})
-                       
-                   if not (split[2] in  minimal_json["CityObjects"][name][split[0]][split[1]]):   
-                       minimal_json["CityObjects"][name][split[0]][split[1]].update({split[2]:prop[1]})
-               elif len(split)==2:
-                   
-                   if not (split[0] in  minimal_json["CityObjects"][name]):
-                       minimal_json["CityObjects"][name].update({split[0]:{}})
-                       
-                   if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):    
-                       minimal_json["CityObjects"][name][split[0]].update({split[1]:prop[1]})
-               else:
-                   if not (split[0] in  minimal_json["CityObjects"][name]):
-                       minimal_json["CityObjects"][name].update({split[0]:prop[1]})
-
-    #Load objects
+    "vertices":[]}
+   
     vertex_index_offset = 0
     for city_object in bpy.data.objects:
-        #Exporting only MESH objects"
-        if city_object.type == 'MESH':
+        if city_object.type=='EMPTY':
+            name=city_object.name
+            minimal_json["CityObjects"].setdefault(name,{})
+            minimal_json["CityObjects"][name].setdefault('geometry',[])
 
-            #Storing geometry of object | The structure of the CityJSON file is partially hardcoded here for prototyping reasons
+           
+            #Get all the custom properties of the object
+            cp=city_object.items()
+            for prop in cp:
+                split = prop[0].split(".")
+                # print (split)
+
+                #Check if the attribute is IDPropertyArray. JSON encoder cannot handle this type
+                if isinstance(prop[1],idprop.types.IDPropertyArray):
+                    attribute=prop[1].to_list()
+                else:
+                    attribute=prop[1]
+                               
+                if len(split)==3:
+                    if not (split[0] in  minimal_json["CityObjects"][name]):
+                        minimal_json["CityObjects"][name].update({split[0]:{}})
+                   
+                    if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):    
+                        minimal_json["CityObjects"][name][split[0]].update({split[1]:{}})
+                       
+                    if not (split[2] in  minimal_json["CityObjects"][name][split[0]][split[1]]):   
+                        minimal_json["CityObjects"][name][split[0]][split[1]].update({split[2]:attribute})
+                elif len(split)==2:
+                   
+                    if not (split[0] in  minimal_json["CityObjects"][name]):
+                        minimal_json["CityObjects"][name].update({split[0]:{}})
+                       
+                    if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):
+                        minimal_json["CityObjects"][name][split[0]].update({split[1]:attribute})
+                else:
+                    if not (split[0] in  minimal_json["CityObjects"][name]):
+                        minimal_json["CityObjects"][name].update({split[0]:attribute})
+
+        if city_object.type =='MESH':
+            #Check if semantics exist
+            if city_object.material:
+                print (city_object.material)
+
             name = city_object.name
-            minimal_json["CityObjects"].update({name:{}})
-            minimal_json["CityObjects"][name].update({'type':"Building","attributes":{},"geometry":[]})
-            minimal_json["CityObjects"][name].setdefault("geometry", []).append({'type':"MultiSurface","boundaries":[]})
-            minimal_json["CityObjects"][name]["geometry"][0]["lod"]=2
-            
+            original_objects_name = trimmed_name= name[10:]
+            minimal_json["CityObjects"].setdefault(original_objects_name,{})
+            minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
+            minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':'TO_BE_SOLVED','boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
+           
             #Accessing specific object's vertices coordinates 
             specific_object_verts = city_object.data.vertices
             #Accessing specific object's faces
             specific_object_faces =city_object.data.polygons
-            
+
             #Browsing through faces and their vertices
             for face in specific_object_faces:
-                minimal_json["CityObjects"][name]["geometry"][0]["boundaries"].append([[]])
+                minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"].append([[]])
                 for i in range(len(specific_object_faces[face.index].vertices)):
                     original_index = specific_object_faces[face.index].vertices[i]
                     vertices_index = original_index + vertex_index_offset
-                    minimal_json["CityObjects"][name]["geometry"][0]["boundaries"][face.index][0].append(vertices_index)
-                     
+                    # print(original_objects_name)
+                    minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(vertices_index)
+
+
             #Create a list of vertices to store the global vertices of all objects
             vertices = list()
             #Accessing the object's vertices and storing them in the 'minimal_json' dictionary if not already there
@@ -92,12 +99,7 @@ def cityJSON_exporter(context, filepath):
                     minimal_json.setdefault("vertices", []).append([co_final[0],co_final[1],co_final[2]])
                     vertices.append(co_final)
                     vertex_index_offset +=1
-                    
-            
-            
-
-            
-                    
+                       
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(minimal_json, f, ensure_ascii=False, indent=4)
