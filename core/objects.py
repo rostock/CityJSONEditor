@@ -76,16 +76,17 @@ def cityJSON_exporter(context, filepath):
             #Accessing specific object's vertices coordinates 
             specific_object_verts = city_object.data.vertices
             #Accessing specific object's faces
-            specific_object_faces =city_object.data.polygons
+            specific_object_faces = city_object.data.polygons
 
             #Browsing through faces and their vertices
             for face in specific_object_faces:
-                minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"].append([[]])
+                minimal_json["CityObjects"][original_objects_name]["geometry"][0]["boundaries"].append([[]])
                 for i in range(len(specific_object_faces[face.index].vertices)):
                     original_index = specific_object_faces[face.index].vertices[i]
                     vertices_index = original_index + vertex_index_offset
                     # print(original_objects_name)
-                    minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(vertices_index)
+                    minimal_json["CityObjects"][original_objects_name]["geometry"][0]["boundaries"][face.index][0].append(vertices_index)
+                print("Material: {}".format(city_object.data.materials[face.material_index]))
 
 
             #Create a list of vertices to store the global vertices of all objects
