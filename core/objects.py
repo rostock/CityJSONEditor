@@ -64,8 +64,8 @@ def cityJSON_exporter(context, filepath):
 
         if city_object.type =='MESH':
             #Check if semantics exist
-            if city_object.material:
-                print (city_object.material)
+            if city_object.data.materials:
+                print (city_object.data.materials)
 
             name = city_object.name
             original_objects_name = trimmed_name= name[10:]
