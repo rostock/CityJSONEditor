@@ -14,12 +14,13 @@ from .utils import (assign_properties, clean_buffer, clean_list,
 
 def cityJSON_exporter(context, filepath):
     minimal_json = {
-    "type": "CityJSON",
-    "version": "1.0",
-    "extensions": {},
-    "metadata": {},
-    "CityObjects": {},
-    "vertices":[]}
+        "type": "CityJSON",
+        "version": "1.0",
+        "extensions": {},
+        "metadata": {},
+        "CityObjects": {},
+        "vertices":[]
+    }
    
     vertex_index_offset = 0
     for city_object in bpy.data.objects:
