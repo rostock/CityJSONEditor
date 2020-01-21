@@ -9,10 +9,14 @@ import idprop
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
                        CityObjectTypeMaterialFactory)
 from .utils import (assign_properties, clean_buffer, clean_list,
-                    coord_translate_axis_origin, remove_scene_objects)
+                    coord_translate_axis_origin, remove_scene_objects,store_semantics)
 
 
 def cityJSON_exporter(context, filepath):
+    start=time.time()
+
+    print("\nExporting CityJSON file...")
+    
     minimal_json = {
         "type": "CityJSON",
         "version": "1.0",
@@ -24,6 +28,8 @@ def cityJSON_exporter(context, filepath):
    
     vertex_index_offset = 0
     for city_object in bpy.data.objects:
+        
+        #Empty objects have all the attributes
         if city_object.type=='EMPTY':
             name=city_object.name
             minimal_json["CityObjects"].setdefault(name,{})
@@ -34,14 +40,14 @@ def cityJSON_exporter(context, filepath):
             cp=city_object.items()
             for prop in cp:
                 split = prop[0].split(".")
-                # print (split)
-
+                
                 #Check if the attribute is IDPropertyArray. JSON encoder cannot handle this type
                 if isinstance(prop[1],idprop.types.IDPropertyArray):
+                    #convert type IDPropertyArray to python list
                     attribute=prop[1].to_list()
                 else:
                     attribute=prop[1]
-                               
+                #Split is the spliited name of the atributes where "." | Every "." represents one level below in the dictionart              
                 if len(split)==3:
                     if not (split[0] in  minimal_json["CityObjects"][name]):
                         minimal_json["CityObjects"][name].update({split[0]:{}})
@@ -62,33 +68,60 @@ def cityJSON_exporter(context, filepath):
                     if not (split[0] in  minimal_json["CityObjects"][name]):
                         minimal_json["CityObjects"][name].update({split[0]:attribute})
 
+        
+        #If the object is MESH means that is an actual geometry contained in the CityJSON file
         if city_object.type =='MESH':
-            #Check if semantics exist
-            if city_object.data.materials:
-                print (city_object.data.materials)
-
+            
             name = city_object.name
+            #Trim the name to remove the extra prefix added upon importing
             original_objects_name = trimmed_name= name[10:]
             minimal_json["CityObjects"].setdefault(original_objects_name,{})
             minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
-            minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':'TO_BE_SOLVED','boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
-           
+
+            #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra tags to store it
+            if city_object.data.materials:
+                minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
+            else:
+                minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']}) 
+            
+            
             #Accessing specific object's vertices coordinates 
             specific_object_verts = city_object.data.vertices
             #Accessing specific object's faces
             specific_object_faces = city_object.data.polygons
 
-            #Browsing through faces and their vertices
-            for face in specific_object_faces:
-                minimal_json["CityObjects"][original_objects_name]["geometry"][0]["boundaries"].append([[]])
-                for i in range(len(specific_object_faces[face.index].vertices)):
-                    original_index = specific_object_faces[face.index].vertices[i]
-                    vertices_index = original_index + vertex_index_offset
-                    # print(original_objects_name)
-                    minimal_json["CityObjects"][original_objects_name]["geometry"][0]["boundaries"][face.index][0].append(vertices_index)
-                print("Material: {}".format(city_object.data.materials[face.material_index]))
+            #Browsing through faces and their vertices of every object. | Since the structure that the geometry is stored is different with respect to the geometry type 
+            #the geometry type is checked for every object. Case of multisolid hasn't been taken under consideration. 
+            #In case the object has semantics they are accordingly stored as well
+            if city_object['type'] == 'MultiSurface':
+                    
+                for face in specific_object_faces:
+                    minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"].append([[]])
+                    
+                    for i in range(len(specific_object_faces[face.index].vertices)):
+                        original_index = specific_object_faces[face.index].vertices[i]
+                        vertices_index = original_index + vertex_index_offset
+                        minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(vertices_index)
+
+                    if city_object.data.materials:
+                        store_semantics(minimal_json,city_object,original_objects_name,face)
 
 
+            if city_object['type'] == 'Solid':
+                
+                minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"].append([])
+                for face in specific_object_faces:
+                    minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0].append([[]])
+                                        
+                    for i in range(len(specific_object_faces[face.index].vertices)):
+                        original_index = specific_object_faces[face.index].vertices[i]
+                        vertices_index = original_index + vertex_index_offset
+                        minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0][face.index][0].append(vertices_index) 
+                    
+                    if city_object.data.materials:
+                        store_semantics(minimal_json,city_object,original_objects_name,face)
+
+           
             #Create a list of vertices to store the global vertices of all objects
             vertices = list()
             #Accessing the object's vertices and storing them in the 'minimal_json' dictionary if not already there
@@ -105,6 +138,13 @@ def cityJSON_exporter(context, filepath):
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(minimal_json, f, ensure_ascii=False, indent=4)
+    
+    end=time.time()
+
+    print("\n")
+    print("CityJSON file successfully exported!\n")
+    print("Total Exporting Time: ", round(end-start, 2), "s")
+    
     
     return{'FINISHED'}       
             
@@ -270,6 +310,8 @@ class CityJSONParser:
         if 'lod' in geom:
             geom_obj['lod'] = geom['lod']
 
+        geom_obj['type'] = geom['type']
+
         return geom_obj
 
     def execute(self):
@@ -278,7 +320,7 @@ class CityJSONParser:
         if self.clear_scene:
             remove_scene_objects()
 
-        print("Importing CityJSON file...")
+        print("\nImporting CityJSON file...")
 
         self.load_data()
 
