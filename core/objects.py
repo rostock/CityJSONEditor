@@ -25,8 +25,12 @@ def cityJSON_exporter(context, filepath):
         "CityObjects": {},
         "vertices":[]
     }
-   
-    vertex_index_offset = 0
+    progress_max = len(bpy.data.objects)
+    progress = 0
+
+    cityjson_vertices_index = 0
+    #Create a list of vertices to store the global vertices of all objects
+    vertices = list()
     for city_object in bpy.data.objects:
         
         #Empty objects have all the attributes
@@ -74,7 +78,7 @@ def cityJSON_exporter(context, filepath):
             
             name = city_object.name
             #Trim the name to remove the extra prefix added upon importing
-            original_objects_name = trimmed_name= name[10:]
+            original_objects_name = name[10:]
             minimal_json["CityObjects"].setdefault(original_objects_name,{})
             minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
 
@@ -83,8 +87,7 @@ def cityJSON_exporter(context, filepath):
                 minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
             else:
                 minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']}) 
-            
-            
+                        
             #Accessing specific object's vertices coordinates 
             specific_object_verts = city_object.data.vertices
             #Accessing specific object's faces
@@ -94,18 +97,23 @@ def cityJSON_exporter(context, filepath):
             #the geometry type is checked for every object. Case of multisolid hasn't been taken under consideration. 
             #In case the object has semantics they are accordingly stored as well
             if city_object['type'] == 'MultiSurface':
-                    
+                   
                 for face in specific_object_faces:
                     minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"].append([[]])
-                    
+                   
                     for i in range(len(specific_object_faces[face.index].vertices)):
+                        
                         original_index = specific_object_faces[face.index].vertices[i]
-                        vertices_index = original_index + vertex_index_offset
-                        minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(vertices_index)
-
-                    if city_object.data.materials:
-                        store_semantics(minimal_json,city_object,original_objects_name,face)
-
+                        get_vertex = specific_object_verts[original_index]
+                        if get_vertex.co in vertices:    
+                            vert_index = vertices.index(get_vertex.co)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(vert_index)
+                        else:
+                            vertices.append(get_vertex.co)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(cityjson_vertices_index)
+                            cityjson_vertices_index += 1
+                    
+                    store_semantics(minimal_json,city_object,original_objects_name,face)
 
             if city_object['type'] == 'Solid':
                 
@@ -115,26 +123,28 @@ def cityJSON_exporter(context, filepath):
                                         
                     for i in range(len(specific_object_faces[face.index].vertices)):
                         original_index = specific_object_faces[face.index].vertices[i]
-                        vertices_index = original_index + vertex_index_offset
-                        minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0][face.index][0].append(vertices_index) 
-                    
-                    if city_object.data.materials:
-                        store_semantics(minimal_json,city_object,original_objects_name,face)
-
-           
-            #Create a list of vertices to store the global vertices of all objects
-            vertices = list()
-            #Accessing the object's vertices and storing them in the 'minimal_json' dictionary if not already there
-            #In case of two/more objects using the same vertex, the vertex may already exist in the list
-            for i in range(len(specific_object_verts)):
-                if specific_object_verts[i] not in vertices:
-                    v = city_object.data.vertices[i]
-                    #Calculating coordinates with transformation
-                    co_final = city_object.matrix_world @ v.co
-                    minimal_json.setdefault("vertices", []).append([co_final[0],co_final[1],co_final[2]])
-                    vertices.append(co_final)
-                    vertex_index_offset +=1
-                       
+                        
+                        get_vertex = specific_object_verts[original_index]
+                        if get_vertex.co in vertices:
+                            vert_index = vertices.index(get_vertex.co)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0][face.index][0].append(vert_index)
+                        else:
+                            vertices.append(get_vertex.co)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0][face.index][0].append(cityjson_vertices_index)
+                            cityjson_vertices_index += 1
+                                       
+                    store_semantics(minimal_json,city_object,original_objects_name,face)
+                  
+        progress += 1
+        print("Exporting: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+    
+    
+    #Writing vertices to minimal_json
+    for vert in vertices:
+        coord = city_object.matrix_world @ vert
+        minimal_json['vertices'].append([coord[0],coord[1],coord[2]])
+       
+    print ("\nWriting to CityJSON file...")
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(minimal_json, f, ensure_ascii=False, indent=4)
