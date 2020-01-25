@@ -139,15 +139,15 @@ def cityJSON_exporter(context, filepath):
         print("Exporting: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     
     
-    #Writing vertices to minimal_json
+    #Writing vertices to minimal_json after translation to the original position
     for vert in vertices:
         coord = city_object.matrix_world @ vert
-        minimal_json['vertices'].append([coord[0],coord[1],coord[2]])
+        minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["X_translation"],coord[1]-bpy.context.scene.world["Y_translation"],coord[2]-bpy.context.scene.world["Z_translation"]])
        
     print ("\nWriting to CityJSON file...")
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(minimal_json, f, ensure_ascii=False, indent=4)
+        json.dump(minimal_json, f, ensure_ascii=False)
     
     end=time.time()
 
@@ -280,6 +280,10 @@ class CityJSONParser:
         # Translating coordinates to the axis origin
         translation = coord_translate_axis_origin(vertices)
 
+        bpy.context.scene.world['X_translation']=-translation[1]
+        bpy.context.scene.world['Y_translation']=-translation[2]
+        bpy.context.scene.world['Z_translation']=-translation[3]
+
         # Updating vertices with new translated vertices
         self.vertices = translation[0]
 
@@ -335,6 +339,8 @@ class CityJSONParser:
         self.load_data()
 
         self.prepare_vertices()
+
+        
 
         new_objects = []
         cityobjs = {}
