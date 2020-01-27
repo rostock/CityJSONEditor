@@ -96,3 +96,72 @@ def store_semantics (minimal_json,city_object,original_objects_name,face):
         minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]['semantics'].setdefault('surfaces',[]).append({'type':surface_semantic[0]})
 
     return None
+
+def bbox(objects):
+    """Calculates the bounding box of the objects given"""
+    #Initialization 
+    obj = objects[0]
+    bbox = obj.bound_box
+    xmax = bbox[0][0]
+    ymax = bbox[0][1]
+    zmax = bbox[0][2]
+    xmin = xmax
+    ymin = ymax
+    zmin = zmax
+    world_max_extent = [xmax, ymax, zmax]
+    world_min_extent = [xmin, ymin, zmin]
+
+    #Calculating bbox of the whole scene
+    for obj in objects:
+        bbox = obj.bound_box
+
+        xmax = bbox[0][0]
+        ymax = bbox[0][1]
+        zmax = bbox[0][2]
+
+        xmin = xmax
+        ymin = ymax
+        zmin = zmax
+    
+        for i in range(len(bbox)):
+            if bbox[i][0] > xmax:
+                xmax = bbox[i][0]
+            if bbox[i][0] < xmin:
+                xmin = bbox[i][0]
+                
+            if bbox[i][1] > ymax:
+                ymax = bbox[i][1]
+            if bbox[i][1] < ymin:
+                ymin = bbox[i][1]
+                
+            if bbox[i][2] > zmax:
+                zmax = bbox[i][2]
+            if bbox[i][2] < zmin:
+                zmin = bbox[i][2]
+            
+        object_max_extent = [xmax, ymax, zmax]
+        object_min_extent = [xmin, ymin, zmin]
+        
+        if object_max_extent[0]>world_max_extent[0]:
+            world_max_extent[0]=object_max_extent[0]
+        if object_max_extent[1]>world_max_extent[1]:
+            world_max_extent[1]=object_max_extent[1]
+        if object_max_extent[2]>world_max_extent[2]:
+            world_max_extent[2]=object_max_extent[2]
+        if object_min_extent[0]<world_min_extent[0]:
+            world_min_extent[0]=object_min_extent[0]
+        if object_min_extent[1]<world_min_extent[1]:
+            world_min_extent[1]=object_min_extent[1]
+        if object_min_extent[2]<world_min_extent[2]:
+            world_min_extent[2]=object_min_extent[2]
+    
+    #Translating back to original
+    world_min_extent[0]-=bpy.context.scene.world["X_translation"]
+    world_min_extent[1]-=bpy.context.scene.world["Y_translation"]
+    world_min_extent[2]-=bpy.context.scene.world["Z_translation"]
+
+    world_max_extent[0]-=bpy.context.scene.world["X_translation"]
+    world_max_extent[1]-=bpy.context.scene.world["Y_translation"]
+    world_max_extent[2]-=bpy.context.scene.world["Z_translation"]
+
+    return world_min_extent,world_max_extent

@@ -9,7 +9,7 @@ import idprop
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
                        CityObjectTypeMaterialFactory)
 from .utils import (assign_properties, clean_buffer, clean_list,
-                    coord_translate_axis_origin, remove_scene_objects,store_semantics)
+                    coord_translate_axis_origin, remove_scene_objects,store_semantics,bbox)
 
 
 def cityJSON_exporter(context, filepath):
@@ -138,12 +138,28 @@ def cityJSON_exporter(context, filepath):
         progress += 1
         print("Exporting: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     
-    
+    #Updating the metadata tag
+
+    print ("\nCalculating metadata")
+    minimal_json['metadata'].update({'geographicalExtent':[]})
+    minim,maxim = bbox(bpy.data.objects)
+    minim[0]-=bpy.context.scene.world["X_translation"]
+    minim[1]-=bpy.context.scene.world["Y_translation"]
+    minim[2]-=bpy.context.scene.world["Z_translation"]
+
+    for extent_coord in minim:
+        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
+
+    for extent_coord in maxim:
+        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
+
     #Writing vertices to minimal_json after translation to the original position
     for vert in vertices:
         coord = city_object.matrix_world @ vert
         minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["X_translation"],coord[1]-bpy.context.scene.world["Y_translation"],coord[2]-bpy.context.scene.world["Z_translation"]])
-       
+
+
+
     print ("\nWriting to CityJSON file...")
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
@@ -339,9 +355,7 @@ class CityJSONParser:
         self.load_data()
 
         self.prepare_vertices()
-
         
-
         new_objects = []
         cityobjs = {}
 
