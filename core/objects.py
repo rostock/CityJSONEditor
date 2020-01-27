@@ -140,7 +140,7 @@ def cityJSON_exporter(context, filepath):
     
     #Updating the metadata tag
 
-    print ("\nCalculating metadata")
+    print ("\n\nCalculating metadata...")
     minimal_json['metadata'].update({'geographicalExtent':[]})
     minim,maxim = bbox(bpy.data.objects)
     minim[0]-=bpy.context.scene.world["X_translation"]
@@ -160,16 +160,16 @@ def cityJSON_exporter(context, filepath):
 
 
 
-    print ("\nWriting to CityJSON file...")
+    print ("Writing to CityJSON file...")
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(minimal_json, f, ensure_ascii=False)
     
     end=time.time()
 
-    print("\n")
-    print("CityJSON file successfully exported!\n")
-    print("Total Exporting Time: ", round(end-start, 2), "s")
+    
+    print("\nCityJSON file successfully exported!")
+    print("\nTotal Exporting Time: ", round(end-start, 2), "s")
     
     
     return{'FINISHED'}       
