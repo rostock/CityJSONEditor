@@ -14,9 +14,8 @@ from .utils import (assign_properties, clean_buffer, clean_list,
 
 def cityJSON_exporter(context, filepath):
     start=time.time()
-
-    print("\nExporting CityJSON file...")
-    
+    print("\nExporting CityJSON scene...\n")
+    #Create the initial structure of the cityjson dictionary
     minimal_json = {
         "type": "CityJSON",
         "version": "1.0",
@@ -25,53 +24,52 @@ def cityJSON_exporter(context, filepath):
         "CityObjects": {},
         "vertices":[]
     }
+    # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
     progress_max = len(bpy.data.objects)
+    # Initialize progress status
     progress = 0
-
+    # Variable to store the next index free that a vertex should be saved in the cityjson file.
     cityjson_vertices_index = 0
-    #Create a list of vertices to store the global vertices of all objects
+    # Create a list of vertices to store the global vertices of all objects
     vertices = list()
     for city_object in bpy.data.objects:
-        
-        #Empty objects have all the attributes
+        #Empty objects have all the attributes so their properties are accessed to extract this information
         if city_object.type=='EMPTY':
             name=city_object.name
             minimal_json["CityObjects"].setdefault(name,{})
             minimal_json["CityObjects"][name].setdefault('geometry',[])
 
-           
             #Get all the custom properties of the object
             cp=city_object.items()
             for prop in cp:
-                split = prop[0].split(".")
-                
-                #Check if the attribute is IDPropertyArray. JSON encoder cannot handle this type
+                # Upon import into Blender the for every level deeper an attribute is nested the more a "." is used in the string between the 2 attributes' names
+                # So to store it back to the original form the concatenated string must be split. 
+                # Split is the list containing the original attributes names.
+                split = prop[0].split(".")                
+                # Check if the attribute is IDPropertyArray and convert to python list type because JSON encoder cannot handle type IDPropertyArray.
                 if isinstance(prop[1],idprop.types.IDPropertyArray):
-                    #convert type IDPropertyArray to python list
                     attribute=prop[1].to_list()
                 else:
                     attribute=prop[1]
-                #Split is the spliited name of the atributes where "." | Every "." represents one level below in the dictionart              
+
+                # Storing the attributes back to the dictionary. 
+                # The following code works only up to 3 levels of nested attributes
+                #TODO Future suggestion: Make a function out of this that works for any level of nested attributes.             
                 if len(split)==3:
                     if not (split[0] in  minimal_json["CityObjects"][name]):
                         minimal_json["CityObjects"][name].update({split[0]:{}})
-                   
                     if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):    
                         minimal_json["CityObjects"][name][split[0]].update({split[1]:{}})
-                       
                     if not (split[2] in  minimal_json["CityObjects"][name][split[0]][split[1]]):   
                         minimal_json["CityObjects"][name][split[0]][split[1]].update({split[2]:attribute})
                 elif len(split)==2:
-                   
                     if not (split[0] in  minimal_json["CityObjects"][name]):
                         minimal_json["CityObjects"][name].update({split[0]:{}})
-                       
                     if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):
                         minimal_json["CityObjects"][name][split[0]].update({split[1]:attribute})
                 else:
                     if not (split[0] in  minimal_json["CityObjects"][name]):
                         minimal_json["CityObjects"][name].update({split[0]:attribute})
-
         
         #If the object is MESH means that is an actual geometry contained in the CityJSON file
         if city_object.type =='MESH':
@@ -81,84 +79,94 @@ def cityJSON_exporter(context, filepath):
             original_objects_name = name[10:]
             minimal_json["CityObjects"].setdefault(original_objects_name,{})
             minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
-
-            #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra tags to store it
-            if city_object.data.materials:
-                minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
-            else:
-                minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']}) 
-                        
+                      
             #Accessing specific object's vertices coordinates 
             specific_object_verts = city_object.data.vertices
             #Accessing specific object's faces
             specific_object_faces = city_object.data.polygons
-
-            #Browsing through faces and their vertices of every object. | Since the structure that the geometry is stored is different with respect to the geometry type 
-            #the geometry type is checked for every object. Case of multisolid hasn't been taken under consideration. 
-            #In case the object has semantics they are accordingly stored as well
+            
+            #For every lod present create a new geometry 
+            for i in range(len(bpy.data.collections)):
+                #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra tags to store it.
+                #Otherwise just create the rest of the tags
+                if city_object.data.materials:
+                    minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
+                else:
+                    minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
+            
+            # Find the index of the object's collection in the collections list. This is the index that the LoD of this geometry should be saved in the CityJSON file. 
+            object_collection_name = city_object.users_collection[0].name
+            for i in range(len(bpy.data.collections)):
+                if bpy.data.collections[i].name ==object_collection_name:
+                    index = i
+                     
+            # Geometry type is checked for every object, because the structure that the geometry has to be stored in the cityjson is different depending on the geometry type 
+            # In case the object has semantics they are accordingly stored as well
+            # Case of multisolid hasn't been taken under consideration!!
+            """TODO make a function of this"""
             if city_object['type'] == 'MultiSurface':
-                   
+                # Browsing through faces and their vertices of every object.
                 for face in specific_object_faces:
-                    minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"].append([[]])
-                   
+                    minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"].append([[]])
                     for i in range(len(specific_object_faces[face.index].vertices)):
-                        
                         original_index = specific_object_faces[face.index].vertices[i]
                         get_vertex = specific_object_verts[original_index]
+                        # Check if vertex already is saved.
+                        # If yes append its index at the vertices list into the cityjson file.
+                        # If no append this vertex in the vertices list then append its vertex (cityjson_vertices_index) and increment this index by one.
                         if get_vertex.co in vertices:    
                             vert_index = vertices.index(get_vertex.co)
-                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(vert_index)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][face.index][0].append(vert_index)
                         else:
                             vertices.append(get_vertex.co)
-                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][face.index][0].append(cityjson_vertices_index)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][face.index][0].append(cityjson_vertices_index)
                             cityjson_vertices_index += 1
-                    
-                    store_semantics(minimal_json,city_object,original_objects_name,face)
+                    # In case the object has semantics they are accordingly stored as well
+                    store_semantics(minimal_json,city_object,index,original_objects_name,face)
 
             if city_object['type'] == 'Solid':
-                
-                minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"].append([])
+                minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"].append([])
                 for face in specific_object_faces:
-                    minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0].append([[]])
-                                        
+                    minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][0].append([[]])
                     for i in range(len(specific_object_faces[face.index].vertices)):
                         original_index = specific_object_faces[face.index].vertices[i]
                         
                         get_vertex = specific_object_verts[original_index]
                         if get_vertex.co in vertices:
                             vert_index = vertices.index(get_vertex.co)
-                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0][face.index][0].append(vert_index)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][0][face.index][0].append(vert_index)
                         else:
                             vertices.append(get_vertex.co)
-                            minimal_json["CityObjects"][original_objects_name]["geometry"][city_object['lod']]["boundaries"][0][face.index][0].append(cityjson_vertices_index)
+                            minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][0][face.index][0].append(cityjson_vertices_index)
                             cityjson_vertices_index += 1
-                                       
-                    store_semantics(minimal_json,city_object,original_objects_name,face)
-                  
+                    # In case the object has semantics they are accordingly stored as well                  
+                    store_semantics(minimal_json,city_object,index,original_objects_name,face)
         progress += 1
-        print("Exporting: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+        print("Appending geometries, semantics, attributes: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     
-    #Updating the metadata tag
-
-    print ("\n\nCalculating metadata...")
-    minimal_json['metadata'].update({'geographicalExtent':[]})
-    minim,maxim = bbox(bpy.data.objects)
-    minim[0]-=bpy.context.scene.world["X_translation"]
-    minim[1]-=bpy.context.scene.world["Y_translation"]
-    minim[2]-=bpy.context.scene.world["Z_translation"]
-
-    for extent_coord in minim:
-        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
-
-    for extent_coord in maxim:
-        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
-
-    #Writing vertices to minimal_json after translation to the original position
+    # Writing vertices to minimal_json after translation to the original position.
+    # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
+    progress_max = len(vertices)
+    # Initialize progress status
+    progress = 0
     for vert in vertices:
         coord = city_object.matrix_world @ vert
         minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["X_translation"],coord[1]-bpy.context.scene.world["Y_translation"],coord[2]-bpy.context.scene.world["Z_translation"]])
-
-
+        progress +=1
+    print("\nAppending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+    
+    print ("\nExporting metadata...")
+    
+    minimal_json['metadata'].update({'geographicalExtent':[]})
+    # Calculation of the bounding box of the whole area to get the geographic extents
+    minim,maxim = bbox(bpy.data.objects)
+        
+    #Updating the metadata tag
+    print ("Appending geographical extent...")
+    for extent_coord in minim:
+        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
+    for extent_coord in maxim:
+        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
 
     print ("Writing to CityJSON file...")
     #Writing CityJSON file
@@ -167,15 +175,10 @@ def cityJSON_exporter(context, filepath):
     
     end=time.time()
 
-    
-    print("\nCityJSON file successfully exported!")
+    print("\nBlender scene successfully exported to CityJSON!")
     print("\nTotal Exporting Time: ", round(end-start, 2), "s")
-    
-    
+      
     return{'FINISHED'}       
-            
-"""TODO Fix the indexing of vertices when more than one objects are added. At the moment it works correctly only with 
-one object. The other is distorted due to bad indexing of appropriate vertices """
 
 def get_geometry_name(objid, geom, index):
     """Returns the name of the provided geometry"""
