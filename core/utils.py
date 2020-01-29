@@ -90,6 +90,7 @@ def clean_buffer(vertices, bounds):
 def store_semantics (minimal_json,city_object,index,original_objects_name,face):
     """Stores the semantics from the objects materials"""
     if city_object.data.materials:
+        # minimal_json["CityObjects"][original_objects_name]['geometry'][index].update({'semantics':{}})
         minimal_json["CityObjects"][original_objects_name]["geometry"][index]['semantics'].setdefault('values',[[]])
         minimal_json["CityObjects"][original_objects_name]["geometry"][index]['semantics']['values'][0].append(face.index)
         surface_semantic = city_object.data.materials[face.material_index].values()

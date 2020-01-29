@@ -73,7 +73,6 @@ def cityJSON_exporter(context, filepath):
         
         #If the object is MESH means that is an actual geometry contained in the CityJSON file
         if city_object.type =='MESH':
-            
             name = city_object.name
             #Trim the name to remove the extra prefix added upon importing
             original_objects_name = name[10:]
@@ -85,20 +84,21 @@ def cityJSON_exporter(context, filepath):
             #Accessing specific object's faces
             specific_object_faces = city_object.data.polygons
             
-            #For every lod present create a new geometry 
-            for i in range(len(bpy.data.collections)):
+            #Create as many geometries an the number of collections 
+            
                 #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra tags to store it.
                 #Otherwise just create the rest of the tags
-                if city_object.data.materials:
-                    minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
-                else:
-                    minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
-            
+            if (city_object.data.materials and len(minimal_json["CityObjects"][original_objects_name]['geometry'])<len(bpy.data.collections)):
+                minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
+            elif (not city_object.data.materials and len(minimal_json["CityObjects"][original_objects_name]['geometry'])<len(bpy.data.collections)):
+                minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
+        
             # Find the index of the object's collection in the collections list. This is the index that the LoD of this geometry should be saved in the CityJSON file. 
             object_collection_name = city_object.users_collection[0].name
             for i in range(len(bpy.data.collections)):
                 if bpy.data.collections[i].name ==object_collection_name:
                     index = i
+                    
                      
             # Geometry type is checked for every object, because the structure that the geometry has to be stored in the cityjson is different depending on the geometry type 
             # In case the object has semantics they are accordingly stored as well
@@ -139,7 +139,7 @@ def cityJSON_exporter(context, filepath):
                             vertices.append(get_vertex.co)
                             minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][0][face.index][0].append(cityjson_vertices_index)
                             cityjson_vertices_index += 1
-                    # In case the object has semantics they are accordingly stored as well                  
+                    # In case the object has semantics they are accordingly stored as well
                     store_semantics(minimal_json,city_object,index,original_objects_name,face)
         progress += 1
         print("Appending geometries, semantics, attributes: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
@@ -390,6 +390,7 @@ class CityJSONParser:
         start_hier = time.time()
 
         #Assigning child building parts to parent buildings
+        print ("\n")
         for objid, obj in self.data['CityObjects'].items():
             if 'parents' in obj:
                 parent_id = obj['parents'][0]
