@@ -11,10 +11,9 @@ from .material import (BasicMaterialFactory, ReuseMaterialFactory,
 from .utils import (assign_properties, clean_buffer, clean_list,
                     coord_translate_axis_origin, remove_scene_objects,store_semantics,bbox)
 
-
 def cityJSON_exporter(context, filepath):
     start=time.time()
-    print("\nExporting CityJSON scene...\n")
+    print("\nExporting Blender scene into CityJSON file...")
     #Create the initial structure of the cityjson dictionary
     minimal_json = {
         "type": "CityJSON",
@@ -70,12 +69,19 @@ def cityJSON_exporter(context, filepath):
                 else:
                     if not (split[0] in  minimal_json["CityObjects"][name]):
                         minimal_json["CityObjects"][name].update({split[0]:attribute})
-        
+               
         #If the object is MESH means that is an actual geometry contained in the CityJSON file
         if city_object.type =='MESH':
             name = city_object.name
-            #Trim the name to remove the extra prefix added upon importing
             original_objects_name = name[10:]
+            #Trim the name to remove the extra prefix added upon importing
+            ######################################################################
+            # if name[1]==":":
+            #     original_objects_name = name[10:]
+            # else:
+            #     original_objects_name = name
+            
+            #####################################################################
             minimal_json["CityObjects"].setdefault(original_objects_name,{})
             minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
                       
@@ -143,6 +149,22 @@ def cityJSON_exporter(context, filepath):
                     store_semantics(minimal_json,city_object,index,original_objects_name,face)
         progress += 1
         print("Appending geometries, semantics, attributes: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+        
+    #Store parents/children tags into CityJSON file
+    """Going again through the loop because there is the case that the object whose tag is attempted to be updated
+       is not yet created if this code is run iin the above loop."""
+    #TODO this can be done more efficiently. To be improved...
+    print("\nSaving parents-children relations...")
+    for city_object in bpy.data.objects:
+        #Parent and child relationships are stored in the empty objects carrying also all the attributes
+        if city_object.parent and city_object.type =="EMPTY":
+            parents_id = city_object.parent.name
+            #Create children node/tag below the parent's ID and assign to it the children's name
+            minimal_json["CityObjects"][parents_id].setdefault('children',[])
+            minimal_json["CityObjects"][parents_id]['children'].append(city_object.name)
+            #Create the "parents" tag below the children's ID and assign to it the parent's name
+            minimal_json["CityObjects"][city_object.name].update({'parents':[]})
+            minimal_json["CityObjects"][city_object.name]['parents'].append(parents_id)
     
     # Writing vertices to minimal_json after translation to the original position.
     # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
@@ -153,7 +175,7 @@ def cityJSON_exporter(context, filepath):
         coord = city_object.matrix_world @ vert
         minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["X_translation"],coord[1]-bpy.context.scene.world["Y_translation"],coord[2]-bpy.context.scene.world["Z_translation"]])
         progress +=1
-    print("\nAppending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+    print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     
     print ("\nExporting metadata...")
     
@@ -174,9 +196,8 @@ def cityJSON_exporter(context, filepath):
         json.dump(minimal_json, f, ensure_ascii=False)
     
     end=time.time()
-
-    print("\nBlender scene successfully exported to CityJSON!")
-    print("\nTotal Exporting Time: ", round(end-start, 2), "s")
+    print("\nBlender scene successfully exported to CityJSON at '"+str(filepath)+"'.")
+    print("\nTotal exporting time: ", round(end-start, 2), "s")
       
     return{'FINISHED'}       
 
@@ -390,7 +411,7 @@ class CityJSONParser:
         start_hier = time.time()
 
         #Assigning child building parts to parent buildings
-        print ("\n")
+        print ("\nBuilding hierarchy...")
         for objid, obj in self.data['CityObjects'].items():
             if 'parents' in obj:
                 parent_id = obj['parents'][0]
@@ -405,6 +426,7 @@ class CityJSONParser:
         start_link = time.time()
 
         # Link everything to the scene
+        print ("\nLinking objects to the scene...")
         collection = bpy.context.scene.collection
         for new_object in new_objects:
             if 'lod' in new_object:
@@ -416,10 +438,10 @@ class CityJSONParser:
         end_link = time.time()
 
         #Console output
-        print("\n")
-        print("CityJSON file successfully imported!\n")
-        print("Total Importing Time: ", round(end_import-start_import, 2), "s")
-        print("Building Hierarchy: ", round(end_hier-start_hier, 2), "s")
+        # print("\n")
+        print("\nCityJSON file successfully imported from '"+str(self.filepath)+"'.\n")
+        print("Total importing time: ", round(end_import-start_import, 2), "s")
+        print("Building hierarchy: ", round(end_hier-start_hier, 2), "s")
         print("Linking: ", round(end_link-start_link, 2), "s")
 
         return {'FINISHED'}
