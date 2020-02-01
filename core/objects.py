@@ -18,7 +18,7 @@ def cityJSON_exporter(context, filepath):
     minimal_json = {
         "type": "CityJSON",
         "version": "1.0",
-        "extensions": {},
+        # "extensions": {},
         "metadata": {},
         "CityObjects": {},
         "vertices":[]
