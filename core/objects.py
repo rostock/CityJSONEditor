@@ -178,7 +178,7 @@ def cityJSON_exporter(context, filepath):
     print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     
     print ("\nExporting metadata...")
-    
+    minimal_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
     minimal_json['metadata'].update({'geographicalExtent':[]})
     # Calculation of the bounding box of the whole area to get the geographic extents
     minim,maxim = bbox(bpy.data.objects)
@@ -379,6 +379,10 @@ class CityJSONParser:
         self.load_data()
 
         self.prepare_vertices()
+
+        #Storing the reference system        
+        if self.data['metadata']['referenceSystem']:
+            bpy.context.scene.world['CRS'] = self.data['metadata']['referenceSystem']
         
         new_objects = []
         cityobjs = {}
