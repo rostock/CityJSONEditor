@@ -74,14 +74,6 @@ def cityJSON_exporter(context, filepath):
         if city_object.type =='MESH':
             name = city_object.name
             original_objects_name = name[10:]
-            #Trim the name to remove the extra prefix added upon importing
-            ######################################################################
-            # if name[1]==":":
-            #     original_objects_name = name[10:]
-            # else:
-            #     original_objects_name = name
-            
-            #####################################################################
             minimal_json["CityObjects"].setdefault(original_objects_name,{})
             minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
                       
@@ -171,13 +163,43 @@ def cityJSON_exporter(context, filepath):
     progress_max = len(vertices)
     # Initialize progress status
     progress = 0
+            
     for vert in vertices:
         coord = city_object.matrix_world @ vert
-        minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["X_translation"],coord[1]-bpy.context.scene.world["Y_translation"],coord[2]-bpy.context.scene.world["Z_translation"]])
-        progress +=1
-    print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+        if bpy.context.scene.world['transformed']:
+            #First translate back to the original CRS coordinates 
+            x,y,z = coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],coord[1]\
+                    -bpy.context.scene.world["Axis_Origin_Y_translation"],coord[2]\
+                    -bpy.context.scene.world["Axis_Origin_Z_translation"]
+            #Second transform the original CRS coordinates based on the transform parameters found into the CityJSON file
+            x = round((x - bpy.context.scene.world['transform.X_translate'])/ bpy.context.scene.world['transform.X_scale'])
+            y = round((y - bpy.context.scene.world['transform.Y_translate'])/ bpy.context.scene.world['transform.Y_scale'])
+            z = round((z - bpy.context.scene.world['transform.Z_translate'])/ bpy.context.scene.world['transform.Z_scale'])
+            minimal_json['vertices'].append([x,y,z])
+            progress +=1
+            print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+        else:
+            minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],\
+                                             coord[1]-bpy.context.scene.world["Axis_Origin_Y_translation"],\
+                                             coord[2]-bpy.context.scene.world["Axis_Origin_Z_translation"]])
+            progress +=1
+            print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+    #
+    if bpy.context.scene.world['transformed']:
+        print ("\nExporting transform parameters")
+        minimal_json.update({'transform':{}})
+        minimal_json['transform'].update({'scale':[]})
+        minimal_json['transform'].update({'translate':[]})
+
+        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.X_scale'])
+        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.Y_scale'])
+        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.Z_scale'])
+
+        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.X_translate'])
+        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.Y_translate'])
+        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.Z_translate'])
     
-    print ("\nExporting metadata...")
+    print ("Exporting metadata...")
     minimal_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
     minimal_json['metadata'].update({'geographicalExtent':[]})
     # Calculation of the bounding box of the whole area to get the geographic extents
@@ -316,13 +338,22 @@ class CityJSONParser:
                     + trans_param['translate'][2]
 
                 vertices.append((x, y, z))
+            #Creating transform properties
+            bpy.context.scene.world['transformed'] = True
+            bpy.context.scene.world['transform.X_scale'] = trans_param['scale'][0]
+            bpy.context.scene.world['transform.Y_scale'] = trans_param['scale'][1]
+            bpy.context.scene.world['transform.Z_scale'] = trans_param['scale'][2]
+
+            bpy.context.scene.world['transform.X_translate'] = trans_param['translate'][0]
+            bpy.context.scene.world['transform.Y_translate'] = trans_param['translate'][1]
+            bpy.context.scene.world['transform.Z_translate'] = trans_param['translate'][2]
 
         # Translating coordinates to the axis origin
         translation = coord_translate_axis_origin(vertices)
 
-        bpy.context.scene.world['X_translation']=-translation[1]
-        bpy.context.scene.world['Y_translation']=-translation[2]
-        bpy.context.scene.world['Z_translation']=-translation[3]
+        bpy.context.scene.world['Axis_Origin_X_translation']=-translation[1]
+        bpy.context.scene.world['Axis_Origin_Y_translation']=-translation[2]
+        bpy.context.scene.world['Axis_Origin_Z_translation']=-translation[3]
 
         # Updating vertices with new translated vertices
         self.vertices = translation[0]
@@ -373,7 +404,7 @@ class CityJSONParser:
 
         if self.clear_scene:
             remove_scene_objects()
-
+            
         print("\nImporting CityJSON file...")
 
         self.load_data()
@@ -446,6 +477,6 @@ class CityJSONParser:
         print("\nCityJSON file successfully imported from '"+str(self.filepath)+"'.\n")
         print("Total importing time: ", round(end_import-start_import, 2), "s")
         print("Building hierarchy: ", round(end_hier-start_hier, 2), "s")
-        print("Linking: ", round(end_link-start_link, 2), "s")
+        print("Linking: ", round(end_link-start_link, 2), "s\n")
 
         return {'FINISHED'}

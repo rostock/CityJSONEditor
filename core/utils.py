@@ -7,12 +7,15 @@ processing of CityJSON files
 import bpy
 
 def remove_scene_objects():
-    """Clears the scenes of any objects"""
-
+    """Clears the scenes of any objects and removes world's custom properties 
+    and collections"""
+    #Delete world custom properties
+    if bpy.context.scene.world.keys():
+        for custom_property in bpy.context.scene.world.keys():
+            del bpy.context.scene.world[custom_property]
     # Deleting previous objects every time a new CityJSON file is imported
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete()
-
     # Deleting previously existing collections
     for collection in bpy.data.collections:
         bpy.data.collections.remove(collection)
@@ -157,12 +160,12 @@ def bbox(objects):
             world_min_extent[2]=object_min_extent[2]
     
     #Translating back to original
-    world_min_extent[0]-=bpy.context.scene.world["X_translation"]
-    world_min_extent[1]-=bpy.context.scene.world["Y_translation"]
-    world_min_extent[2]-=bpy.context.scene.world["Z_translation"]
+    world_min_extent[0]-=bpy.context.scene.world["Axis_Origin_X_translation"]
+    world_min_extent[1]-=bpy.context.scene.world["Axis_Origin_Y_translation"]
+    world_min_extent[2]-=bpy.context.scene.world["Axis_Origin_Z_translation"]
 
-    world_max_extent[0]-=bpy.context.scene.world["X_translation"]
-    world_max_extent[1]-=bpy.context.scene.world["Y_translation"]
-    world_max_extent[2]-=bpy.context.scene.world["Z_translation"]
+    world_max_extent[0]-=bpy.context.scene.world["Axis_Origin_X_translation"]
+    world_max_extent[1]-=bpy.context.scene.world["Axis_Origin_Y_translation"]
+    world_max_extent[2]-=bpy.context.scene.world["Axis_Origin_Z_translation"]
 
     return world_min_extent,world_max_extent
