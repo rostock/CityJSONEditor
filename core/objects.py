@@ -166,7 +166,7 @@ def cityJSON_exporter(context, filepath):
             
     for vert in vertices:
         coord = city_object.matrix_world @ vert
-        if bpy.context.scene.world['transformed']:
+        if 'transformed' in bpy.context.scene.world:
             #First translate back to the original CRS coordinates 
             x,y,z = coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],coord[1]\
                     -bpy.context.scene.world["Axis_Origin_Y_translation"],coord[2]\
@@ -185,8 +185,8 @@ def cityJSON_exporter(context, filepath):
             progress +=1
             print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     #
-    if bpy.context.scene.world['transformed']:
-        print ("\nExporting transform parameters")
+    if 'transformed' in bpy.context.scene.world:
+        print ("\nExporting transform parameters...")
         minimal_json.update({'transform':{}})
         minimal_json['transform'].update({'scale':[]})
         minimal_json['transform'].update({'translate':[]})
@@ -200,7 +200,8 @@ def cityJSON_exporter(context, filepath):
         minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.Z_translate'])
     
     print ("Exporting metadata...")
-    minimal_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
+    if 'referenceSystem' in bpy.context.scene.world:
+        minimal_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
     minimal_json['metadata'].update({'geographicalExtent':[]})
     # Calculation of the bounding box of the whole area to get the geographic extents
     minim,maxim = bbox(bpy.data.objects)
@@ -412,7 +413,7 @@ class CityJSONParser:
         self.prepare_vertices()
 
         #Storing the reference system        
-        if self.data['metadata']['referenceSystem']:
+        if 'referenceSystem' in self.data['metadata']:
             bpy.context.scene.world['CRS'] = self.data['metadata']['referenceSystem']
         
         new_objects = []
