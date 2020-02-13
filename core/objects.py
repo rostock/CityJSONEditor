@@ -9,7 +9,10 @@ import idprop
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
                        CityObjectTypeMaterialFactory)
 from .utils import (assign_properties, clean_buffer, clean_list,
-                    coord_translate_axis_origin, remove_scene_objects,store_semantics,bbox)
+                    coord_translate_axis_origin, remove_scene_objects,
+                    write_vertices_to_CityJSON,
+                    export_transformation_parameters, export_metadata,
+                    export_parent_child,export_attributes,store_semantics)
 
 def cityJSON_exporter(context, filepath):
     start=time.time()
@@ -21,13 +24,14 @@ def cityJSON_exporter(context, filepath):
         # "extensions": {},
         "metadata": {},
         "CityObjects": {},
-        "vertices":[]
+        "vertices":[],
+        #"appearance":{}
     }
     # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
     progress_max = len(bpy.data.objects)
     # Initialize progress status
     progress = 0
-    # Variable to store the next index free that a vertex should be saved in the cityjson file.
+    # Variable to store the next index free that a vertex should be saved in the cityjson file. Avoiding saving duplicates.
     cityjson_vertices_index = 0
     # Create a list of vertices to store the global vertices of all objects
     vertices = list()
@@ -51,41 +55,23 @@ def cityJSON_exporter(context, filepath):
                 else:
                     attribute=prop[1]
 
-                # Storing the attributes back to the dictionary. 
-                # The following code works only up to 3 levels of nested attributes
-                #TODO Future suggestion: Make a function out of this that works for any level of nested attributes.             
-                if len(split)==3:
-                    if not (split[0] in  minimal_json["CityObjects"][name]):
-                        minimal_json["CityObjects"][name].update({split[0]:{}})
-                    if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):    
-                        minimal_json["CityObjects"][name][split[0]].update({split[1]:{}})
-                    if not (split[2] in  minimal_json["CityObjects"][name][split[0]][split[1]]):   
-                        minimal_json["CityObjects"][name][split[0]][split[1]].update({split[2]:attribute})
-                elif len(split)==2:
-                    if not (split[0] in  minimal_json["CityObjects"][name]):
-                        minimal_json["CityObjects"][name].update({split[0]:{}})
-                    if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):
-                        minimal_json["CityObjects"][name][split[0]].update({split[1]:attribute})
-                else:
-                    if not (split[0] in  minimal_json["CityObjects"][name]):
-                        minimal_json["CityObjects"][name].update({split[0]:attribute})
-               
+                export_attributes(split,minimal_json,name,attribute)           
+                      
         #If the object is MESH means that is an actual geometry contained in the CityJSON file
         if city_object.type =='MESH':
+            """ Export geometries with their semantics into CityJSON
+                Geometry type is checked for every object, because the structure that the geometry has to be stored in the cityjson is different depending on the geometry type 
+                In case the object has semantics they are accordingly stored as well using the 'store_semantics' function
+                Case of multisolid hasn't been taken under consideration!!
+           """
             name = city_object.name
             original_objects_name = name[10:]
             minimal_json["CityObjects"].setdefault(original_objects_name,{})
             minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
-                      
-            #Accessing specific object's vertices coordinates 
-            specific_object_verts = city_object.data.vertices
-            #Accessing specific object's faces
-            specific_object_faces = city_object.data.polygons
-            
+                               
             #Create as many geometries an the number of collections 
-            
-                #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra tags to store it.
-                #Otherwise just create the rest of the tags
+            #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra tags to store it.
+            #Otherwise just create the rest of the tags
             if (city_object.data.materials and len(minimal_json["CityObjects"][original_objects_name]['geometry'])<len(bpy.data.collections)):
                 minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
             elif (not city_object.data.materials and len(minimal_json["CityObjects"][original_objects_name]['geometry'])<len(bpy.data.collections)):
@@ -96,12 +82,12 @@ def cityJSON_exporter(context, filepath):
             for i in range(len(bpy.data.collections)):
                 if bpy.data.collections[i].name ==object_collection_name:
                     index = i
-                    
-                     
-            # Geometry type is checked for every object, because the structure that the geometry has to be stored in the cityjson is different depending on the geometry type 
-            # In case the object has semantics they are accordingly stored as well
-            # Case of multisolid hasn't been taken under consideration!!
-            """TODO make a function of this"""
+
+            #Accessing specific object's vertices coordinates 
+            specific_object_verts = city_object.data.vertices
+            #Accessing specific object's faces
+            specific_object_faces = city_object.data.polygons
+                        
             if city_object['type'] == 'MultiSurface':
                 # Browsing through faces and their vertices of every object.
                 for face in specific_object_faces:
@@ -139,80 +125,15 @@ def cityJSON_exporter(context, filepath):
                             cityjson_vertices_index += 1
                     # In case the object has semantics they are accordingly stored as well
                     store_semantics(minimal_json,city_object,index,original_objects_name,face)
+                    
         progress += 1
         print("Appending geometries, semantics, attributes: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
         
-    #Store parents/children tags into CityJSON file
-    """Going again through the loop because there is the case that the object whose tag is attempted to be updated
-       is not yet created if this code is run iin the above loop."""
-    #TODO this can be done more efficiently. To be improved...
-    print("\nSaving parents-children relations...")
-    for city_object in bpy.data.objects:
-        #Parent and child relationships are stored in the empty objects carrying also all the attributes
-        if city_object.parent and city_object.type =="EMPTY":
-            parents_id = city_object.parent.name
-            #Create children node/tag below the parent's ID and assign to it the children's name
-            minimal_json["CityObjects"][parents_id].setdefault('children',[])
-            minimal_json["CityObjects"][parents_id]['children'].append(city_object.name)
-            #Create the "parents" tag below the children's ID and assign to it the parent's name
-            minimal_json["CityObjects"][city_object.name].update({'parents':[]})
-            minimal_json["CityObjects"][city_object.name]['parents'].append(parents_id)
-    
-    # Writing vertices to minimal_json after translation to the original position.
-    # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
-    progress_max = len(vertices)
-    # Initialize progress status
-    progress = 0
+    export_parent_child(minimal_json)
+    write_vertices_to_CityJSON(city_object,minimal_json,vertices,len(vertices))
+    export_transformation_parameters(minimal_json)
+    export_metadata(minimal_json)
             
-    for vert in vertices:
-        coord = city_object.matrix_world @ vert
-        if 'transformed' in bpy.context.scene.world:
-            #First translate back to the original CRS coordinates 
-            x,y,z = coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],coord[1]\
-                    -bpy.context.scene.world["Axis_Origin_Y_translation"],coord[2]\
-                    -bpy.context.scene.world["Axis_Origin_Z_translation"]
-            #Second transform the original CRS coordinates based on the transform parameters found into the CityJSON file
-            x = round((x - bpy.context.scene.world['transform.X_translate'])/ bpy.context.scene.world['transform.X_scale'])
-            y = round((y - bpy.context.scene.world['transform.Y_translate'])/ bpy.context.scene.world['transform.Y_scale'])
-            z = round((z - bpy.context.scene.world['transform.Z_translate'])/ bpy.context.scene.world['transform.Z_scale'])
-            minimal_json['vertices'].append([x,y,z])
-            progress +=1
-            print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
-        else:
-            minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],\
-                                             coord[1]-bpy.context.scene.world["Axis_Origin_Y_translation"],\
-                                             coord[2]-bpy.context.scene.world["Axis_Origin_Z_translation"]])
-            progress +=1
-            print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
-    #
-    if 'transformed' in bpy.context.scene.world:
-        print ("\nExporting transform parameters...")
-        minimal_json.update({'transform':{}})
-        minimal_json['transform'].update({'scale':[]})
-        minimal_json['transform'].update({'translate':[]})
-
-        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.X_scale'])
-        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.Y_scale'])
-        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.Z_scale'])
-
-        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.X_translate'])
-        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.Y_translate'])
-        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.Z_translate'])
-    
-    print ("Exporting metadata...")
-    if 'referenceSystem' in bpy.context.scene.world:
-        minimal_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
-    minimal_json['metadata'].update({'geographicalExtent':[]})
-    # Calculation of the bounding box of the whole area to get the geographic extents
-    minim,maxim = bbox(bpy.data.objects)
-        
-    #Updating the metadata tag
-    print ("Appending geographical extent...")
-    for extent_coord in minim:
-        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
-    for extent_coord in maxim:
-        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
-
     print ("Writing to CityJSON file...")
     #Writing CityJSON file
     with open(filepath, 'w', encoding='utf-8') as f:
