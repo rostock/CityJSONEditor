@@ -88,7 +88,7 @@ def cityJSON_exporter(context, filepath):
             #Accessing specific object's faces
             specific_object_faces = city_object.data.polygons
                         
-            if city_object['type'] == 'MultiSurface':
+            if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface' :
                 # Browsing through faces and their vertices of every object.
                 for face in specific_object_faces:
                     minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"].append([[]])
