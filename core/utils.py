@@ -221,7 +221,7 @@ def export_transformation_parameters(minimal_json):
 def export_metadata(minimal_json):
     print ("Exporting metadata...")
     #Check if model's reference system exists
-    if 'referenceSystem' in bpy.context.scene.world:
+    if 'CRS' in bpy.context.scene.world:
         minimal_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
     minimal_json['metadata'].update({'geographicalExtent':[]})
     # Calculation of the bounding box of the whole area to get the geographic extents
