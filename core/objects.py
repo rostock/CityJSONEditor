@@ -69,29 +69,27 @@ def cityJSON_exporter(context, filepath):
             minimal_json["CityObjects"].setdefault(original_objects_name,{})
             minimal_json["CityObjects"][original_objects_name].setdefault('geometry',[])
                                
-            #Create as many geometries an the number of collections 
+            #Create multiple geometries for multiple LoDs 
             #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra tags to store it.
             #Otherwise just create the rest of the tags
-            if (city_object.data.materials and len(minimal_json["CityObjects"][original_objects_name]['geometry'])<len(bpy.data.collections)):
+            if city_object.data.materials:
                 minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
-            elif (not city_object.data.materials and len(minimal_json["CityObjects"][original_objects_name]['geometry'])<len(bpy.data.collections)):
+            else:
                 minimal_json["CityObjects"][original_objects_name]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
         
-            # Find the index of the object's collection in the collections list. This is the index that the LoD of this geometry should be saved in the CityJSON file. 
-            object_collection_name = city_object.users_collection[0].name
-            for i in range(len(bpy.data.collections)):
-                if bpy.data.collections[i].name ==object_collection_name:
-                    index = i
-
             #Accessing specific object's vertices coordinates 
             specific_object_verts = city_object.data.vertices
             #Accessing specific object's faces
             specific_object_faces = city_object.data.polygons
+
+            #Index in the geometry list that the new geometry needs to be stored.
+            index = len(minimal_json["CityObjects"][original_objects_name]['geometry'])-1
                         
             if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface' :
                 # Browsing through faces and their vertices of every object.
                 for face in specific_object_faces:
                     minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"].append([[]])
+                    
                     for i in range(len(specific_object_faces[face.index].vertices)):
                         original_index = specific_object_faces[face.index].vertices[i]
                         get_vertex = specific_object_verts[original_index]
