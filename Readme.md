@@ -2,7 +2,7 @@
 
 *This plugin was originally developed by Konstantinos Mastorakis ([konmast3r](https://github.com/konmast3r/)) as part of their research orientation project for the MSc Geomatics programme of TU Delft.*
 
-A Blender plugin to import 3D city models encoded in the [CityJSON](http://cityjson.org) format. All building attributes and semantic surfaces are stored and can be accesed via Blender's layout.
+A Blender plugin to import/export 3D city models encoded in the [CityJSON](http://cityjson.org) format. All building attributes and semantic surfaces are stored and can be accesed via Blender's layout.
 
 ## Requirements
 
