@@ -163,13 +163,15 @@ def bbox(objects):
             world_min_extent[2]=object_min_extent[2]
     
     #Translating back to original
-    world_min_extent[0]-=bpy.context.scene.world["Axis_Origin_X_translation"]
-    world_min_extent[1]-=bpy.context.scene.world["Axis_Origin_Y_translation"]
-    world_min_extent[2]-=bpy.context.scene.world["Axis_Origin_Z_translation"]
 
-    world_max_extent[0]-=bpy.context.scene.world["Axis_Origin_X_translation"]
-    world_max_extent[1]-=bpy.context.scene.world["Axis_Origin_Y_translation"]
-    world_max_extent[2]-=bpy.context.scene.world["Axis_Origin_Z_translation"]
+    if "Axis_Origin_X_translation" in bpy.context.scene.world:
+        world_min_extent[0]-=bpy.context.scene.world["Axis_Origin_X_translation"]
+        world_min_extent[1]-=bpy.context.scene.world["Axis_Origin_Y_translation"]
+        world_min_extent[2]-=bpy.context.scene.world["Axis_Origin_Z_translation"]
+
+        world_max_extent[0]-=bpy.context.scene.world["Axis_Origin_X_translation"]
+        world_max_extent[1]-=bpy.context.scene.world["Axis_Origin_Y_translation"]
+        world_max_extent[2]-=bpy.context.scene.world["Axis_Origin_Z_translation"]
 
     return world_min_extent,world_max_extent
 
@@ -179,7 +181,7 @@ def write_vertices_to_CityJSON(city_object,minimal_json,vertices,progress_max):
     progress = 0
     for vert in vertices:
         coord = city_object.matrix_world @ vert
-        if 'transformed' in bpy.context.scene.world:
+        if 'transformed' in bpy.context.scene.world and "Axis_Origin_X_translation" in bpy.context.scene.world:
             #First translate back to the original CRS coordinates 
             x,y,z = coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],coord[1]\
                     -bpy.context.scene.world["Axis_Origin_Y_translation"],coord[2]\
@@ -191,13 +193,14 @@ def write_vertices_to_CityJSON(city_object,minimal_json,vertices,progress_max):
             minimal_json['vertices'].append([x,y,z])
             progress +=1
             print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
-        else:
+        elif "Axis_Origin_X_translation" in bpy.context.scene.world:
             minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],\
                                              coord[1]-bpy.context.scene.world["Axis_Origin_Y_translation"],\
                                              coord[2]-bpy.context.scene.world["Axis_Origin_Z_translation"]])
             progress +=1
             print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
-    
+        else:
+            minimal_json['vertices'].append([coord[0],coord[1],coord[2]])
     return None
 
 def export_transformation_parameters(minimal_json):
