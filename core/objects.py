@@ -331,10 +331,12 @@ class CityJSONParser:
 
         self.prepare_vertices()
 
-        #Storing the reference system        
-        if 'referenceSystem' in self.data['metadata']:
-            bpy.context.scene.world['CRS'] = self.data['metadata']['referenceSystem']
-        
+        #Storing the reference system
+        if 'metadata' in self.data:
+                    
+            if 'referenceSystem' in self.data['metadata']:
+                bpy.context.scene.world['CRS'] = self.data['metadata']['referenceSystem']
+            
         new_objects = []
         cityobjs = {}
 
