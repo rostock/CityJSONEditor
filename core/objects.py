@@ -9,8 +9,8 @@ import idprop
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
                        CityObjectTypeMaterialFactory)
 from .utils import (assign_properties, clean_buffer, clean_list,
-                    coord_translate_axis_origin, remove_scene_objects,
-                    write_vertices_to_CityJSON,
+                    coord_translate_axis_origin, coord_translate_by_offset,
+                    remove_scene_objects, write_vertices_to_CityJSON,
                     export_transformation_parameters, export_metadata,
                     export_parent_child,export_attributes,store_semantics)
 
@@ -268,12 +268,18 @@ class CityJSONParser:
             bpy.context.scene.world['transform.Y_translate'] = trans_param['translate'][1]
             bpy.context.scene.world['transform.Z_translate'] = trans_param['translate'][2]
 
-        # Translating coordinates to the axis origin
-        translation = coord_translate_axis_origin(vertices)
+        
+        if 'Axis_Origin_X_translation' in bpy.context.scene.world:
+            offx = -bpy.context.scene.world['Axis_Origin_X_translation']
+            offy = -bpy.context.scene.world['Axis_Origin_Y_translation']
+            offz = -bpy.context.scene.world['Axis_Origin_Z_translation']
+            translation = coord_translate_by_offset(vertices, offx, offy, offz)
+        else:
+            translation = coord_translate_axis_origin(vertices)
 
-        bpy.context.scene.world['Axis_Origin_X_translation']=-translation[1]
-        bpy.context.scene.world['Axis_Origin_Y_translation']=-translation[2]
-        bpy.context.scene.world['Axis_Origin_Z_translation']=-translation[3]
+            bpy.context.scene.world['Axis_Origin_X_translation']=-translation[1]
+            bpy.context.scene.world['Axis_Origin_Y_translation']=-translation[2]
+            bpy.context.scene.world['Axis_Origin_Z_translation']=-translation[3]
 
         # Updating vertices with new translated vertices
         self.vertices = translation[0]
