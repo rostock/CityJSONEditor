@@ -53,15 +53,19 @@ def coord_translate_axis_origin(vertices):
     miny = min(i[1] for i in vertices)
     minz = min(i[2] for i in vertices)
 
+    return coord_translate_by_offset(vertices, minx, miny, minz)
+
+def coord_translate_by_offset(vertices, offx, offy, offz):
+    """Translates the vertices by minx, miny and minz"""
     #Calculating new coordinates
-    translated_x = [i[0]-minx for i in vertices]
-    translated_y = [i[1]-miny for i in vertices]
-    translated_z = [i[2]-minz for i in vertices]
+    translated_x = [i[0]-offx for i in vertices]
+    translated_y = [i[1]-offy for i in vertices]
+    translated_z = [i[2]-offz for i in vertices]
 
     return (tuple(zip(translated_x, translated_y, translated_z)),
-            minx,
-            miny,
-            minz)
+            offx,
+            offy,
+            offz)
 
 def original_coordinates(vertices, minx, miny, minz):
     """Translates the vertices from origin to original"""

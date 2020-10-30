@@ -1,4 +1,4 @@
-# Blender CityJSON Plugin
+# Up3date
 
 *This plugin was originally developed by Konstantinos Mastorakis ([konmast3r](https://github.com/konmast3r/)) as part of their research orientation project for the MSc Geomatics programme of TU Delft.*
 
