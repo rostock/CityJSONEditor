@@ -45,10 +45,16 @@ def cityJSON_exporter(context, filepath):
             #Get all the custom properties of the object
             cp=city_object.items()
             for prop in cp:
+                # When a new empty object is added by user, Blender assigns some built in properties at the first index of the property list. 
+                # With this it is bypassed and continues to the actual properties of the object
+                if prop[0]=="_RNA_UI":
+                    continue  
                 # Upon import into Blender the for every level deeper an attribute is nested the more a "." is used in the string between the 2 attributes' names
                 # So to store it back to the original form the concatenated string must be split. 
                 # Split is the list containing the original attributes names.
-                split = prop[0].split(".")                
+                
+                split = prop[0].split(".") 
+                
                 # Check if the attribute is IDPropertyArray and convert to python list type because JSON encoder cannot handle type IDPropertyArray.
                 if isinstance(prop[1],idprop.types.IDPropertyArray):
                     attribute=prop[1].to_list()
