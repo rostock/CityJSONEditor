@@ -47,6 +47,7 @@ def cityJSON_exporter(context, filepath):
             for prop in cp:
                 # When a new empty object is added by user, Blender assigns some built in properties at the first index of the property list. 
                 # With this it is bypassed and continues to the actual properties of the object
+                
                 if prop[0]=="_RNA_UI":
                     continue  
                 # Upon import into Blender the for every level deeper an attribute is nested the more a "." is used in the string between the 2 attributes' names
