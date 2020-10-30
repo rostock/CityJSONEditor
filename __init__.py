@@ -8,7 +8,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from .core.objects import CityJSONParser
+from .core.objects import CityJSONParser, cityJSON_exporter
 
 bl_info = {
     "name": "Import CityJSON files",
@@ -21,13 +21,6 @@ bl_info = {
     "wiki_url": "",
     "category": "Import-Export",
 }
-
-def write_cityjson(context, filepath):
-    #Will write all scene data in CityJSON format"
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump("No problem", f, ensure_ascii=False, indent=4)
-
-    return {'FINISHED'}
 
 class ImportCityJSON(Operator, ImportHelper):
     "Load a CityJSON file"
@@ -92,7 +85,7 @@ class ExportCityJSON(Operator, ExportHelper):
     )
 
     def execute(self, context):
-        return write_cityjson(context, self.filepath)
+        return cityJSON_exporter(context, self.filepath)
 
 classes = (
     ImportCityJSON,
