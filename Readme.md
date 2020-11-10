@@ -51,7 +51,7 @@ The following options are available during file selection:
 * `Materials' type`:
     * `Surfaces` will create materials according to semantic surfaces (e.g. RoofSurface, WallSurface), if present, and load their attributes.
     * ` City Objects` will create materials per city object and according to the city object's type (e.g. Building, Road).
-* `Reuse materials`: Enable this if you want semantic surface materials to be reused when they share the same type. For example, all `RoofSurface` faces will have the same materials. *This only work when `Surfaces` are selected as `Materials' type`.*<br> 
+* `Reuse materials`: Enable this if you want semantic surface materials to be reused when they share the same type. For example, all `RoofSurface` faces will have the same materials. *This only work when `Surfaces` are selected as `Materials' type`*.<br> 
 **\*Important: Greatly improves speed of loading, but semantic surfaces' attributes can be lost, if present!** 
 * `Clean scene`: Enable this if you want the script to clean the scene of any existing object prior to importing the CityJSON objects.
 
@@ -60,10 +60,10 @@ The following options are available during file selection:
 #### Useful tips
 
 - After a successful import, you should be able to see the model somewhere close to the axis origin. Rotation of the scene and zooming in and out might prove useful at this point, to locate the model. 
-In case you can't see the model, select an object from the `Outliner` (always in `Object Mode`) and click `View > Frame Selected` or use the `home` button of your keyboard and zooming in.<br> 
-**\*Important: Make sure the object you are selecting is a `mesh object`. You can check that from the small pointing down triangle icon next to the object's name.** 
+In case you can't see the model, select an object from the `Outliner` (always in `Object Mode`) and click `View > Frame Selected` or use the `home` button of your keyboard and zooming in*.<br> 
+**\*Important: Make sure the object you are selecting is a `mesh object` and not an `empty object`. You can check that from the small pointing down triangle icon next to the object's name.** 
 
-- A different `Collection` is created for each `LoD` respectively. In case more than 1 geometries exist for the objects -representing different `LODs` (level of detail)-, every geometry is stored under the appropriate `Collection`, under the parent object (if there is any). You can display different `Collections` by clicking on the `eye icon` in the `Outliner` at the top right of the interface (see screenshot below). By default all the `LOD_x` collections should be visible right after importing the 3D City Model. In case you see any artefacts that is the reason! Choosing only one visible collection should remove all artefacts. 
+- A different `Collection` is created for each `LoD` present in the 3D city model. In case more than 1 geometries exist for the objects -representing different `LODs` (levels of detail)-, every geometry is stored under the appropriate `Collection`, under the parent object (if there is any). You can display different `Collections` by clicking on the `eye icon` in the `Outliner` at the top right of the interface (see screenshot below). By default all the `LOD_x` collections should be visible right after importing the 3D City Model. In case you see any artefacts that is the reason! Choosing only one visible collection should remove all artefacts. 
 
 - In case you want to visualize a certain area, click `Shift + B` and draw a rectangle with your mouse to zoom into that specific area of the 3D City Model. This also moves the rotation center at that poin, which will come handy when you want to rotate the model for further inspection.
 
@@ -81,25 +81,26 @@ In case you can't see the model, select an object from the `Outliner` (always in
 
 `Up3date's` exporting module was desinged and implemented in order to be able to export any scene of `Blender` into a `CityJSON` file.
 
-To do so and because there are certain differences between the two data models some conventions were made. In order to export objects from `Blender's` scene the following steps need to be followed:
+To do so and because there are certain differences between the two data models *(Blender and CityJSON)* some conventions were made. In order to export objects from `Blender's` scene the following steps need to be followed:
 
-1. For every `LoD/geometry` a mesh has to be added into `Blender's` scene. In case there are already created `collections` from a previously imported `CityJSON` file it is not necessary to add the `LoD/geometry` into it but recommended for organization purposes. 
+1. For every `LoD/geometry` a mesh* has to be added into `Blender's` scene. In case there are already created `collections` from a previously imported `CityJSON` file, it is not necessary to add the `LoD/geometry` into it, but recommended for organization purposes. 
 
-\*Important: The mesh should be named in a predefined way for `Up3date` to be able to parse it correctly. Example: a single `LoD0` geometry should be added and named as `0: [LoD0] ID_of_object` preserving also the spaces.
+**\*Important: The mesh should be named in a predefined way for `Up3date` to be able to parse it correctly. Example: a single `LoD0` geometry should be added and named as `0: [LoD0] ID_of_object` preserving also the spaces.**
 
 For every `mesh/geometry` 2 more things needs to be added as `custom properties` <br>
-* `type`: the_surfacetype *(Surface, MultiSurface, CompositeSurface and Solid are accepted)* 
+* `type`: the_surface_type (*Surface, MultiSurface, CompositeSurface and Solid* are accepted) 
 * `lod` : the_number_of_lod
 
 ![](new_object_mesh.png) 
 
-2. An empty object has to be created with `ID_of_object` as its name. That object is an umbrella for the various LoD geometries. All the `CityObject's` attributes are stored  within  this  object  as `custom  properties`.   In case the attributes have to be nested, for example the `postal code` of an `address` then the `custom property` key should be `address.postalcode` so `Up3date` can understand the nested attribute structure from the `.` and handle it accordingly.
+2. An empty object has to be created with `ID_of_object` as its name. That object is an umbrella for the various LoD geometries. All the `CityObject's` attributes are stored  within  this  object  as `custom  properties`.<br> 
+In case the attributes have to be nested, for example the `postal code` of an `address`, then the `custom property` key should be `address.postalcode` so `Up3date` can understand the nested attribute structure from the `.` and handle it accordingly.
 
 ![](new_object_empty.png)
 
-3. If the semantics of a *(`LoD 2` or above)* `geometry` surfaces are known  they can be assigned as `materials` to the respective faces. The only information `Up3date` parses is the name of the `material/semantic`.
+3. If the semantics of a *(`LoD 2` or above)* `geometry` surface are known they can be assigned as `materials` to the respective faces. The only information `Up3date` parses is the name of the `material/semantic` and the face it corresponds to.
 
-4. Finally, go to `File > Export > CityJSON (.json)` and export the new instance.
+4. Finally, go to `File > Export > CityJSON (.json)` and export the new instance. Voila!
 
 
 
@@ -110,5 +111,5 @@ If you are using Visual Studio Code, you may:
 - Install [Blender Development](https://marketplace.visualstudio.com/items?itemName=JacquesLucke.blender-development): a plugin that allows starting and debugging Python scripts from VSC.
 - Install the [fake-bpy-module](https://github.com/nutti/fake-bpy-module) to enable auto-completion: `pip install fake-bpy-module-2.80`.
 
-The general rule to follow is: Clone this repository and have fun! 
-If you experience any bugs or have recommendations etc, you can open a new issue, providing all the necessary information. I can't promise to take them all under consideration but I always appreciate them.
+Clone this repository and have fun!*<br> 
+If you experience any bugs or have recommendations etc, you can open a new issue, providing all the necessary information. I can't promise to take them all under consideration but I always appreciate them. 
