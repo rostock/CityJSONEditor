@@ -111,5 +111,5 @@ If you are using Visual Studio Code, you may:
 - Install [Blender Development](https://marketplace.visualstudio.com/items?itemName=JacquesLucke.blender-development): a plugin that allows starting and debugging Python scripts from VSC.
 - Install the [fake-bpy-module](https://github.com/nutti/fake-bpy-module) to enable auto-completion: `pip install fake-bpy-module-2.80`.
 
-Clone this repository and have fun!*<br> 
+Clone this repository and have fun!<br><br> 
 If you experience any bugs or have recommendations etc, you can open a new issue, providing all the necessary information. I can't promise to take them all under consideration but I always appreciate them. 
