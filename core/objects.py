@@ -107,6 +107,10 @@ def cityJSON_exporter(context, filepath):
                             vert_index = vertices.index(get_vertex.co)
                             minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][face.index][0].append(vert_index)
                         else:
+                            #Write vertex to minimal_json at this point so the mesh_object.world_matrix (aka transformation matrix) is always the
+                            #correct one. With the previous way it would take the last object's transformation matrix and would potentially lead to wrong final 
+                            #coordinate to be exported.
+                            write_vertices_to_CityJSON(city_object,get_vertex.co,minimal_json)
                             vertices.append(get_vertex.co)
                             minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][face.index][0].append(cityjson_vertices_index)
                             cityjson_vertices_index += 1
@@ -125,17 +129,17 @@ def cityJSON_exporter(context, filepath):
                             vert_index = vertices.index(get_vertex.co)
                             minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][0][face.index][0].append(vert_index)
                         else:
+                            write_vertices_to_CityJSON(city_object,get_vertex.co,minimal_json)
                             vertices.append(get_vertex.co)
                             minimal_json["CityObjects"][original_objects_name]["geometry"][index]["boundaries"][0][face.index][0].append(cityjson_vertices_index)
                             cityjson_vertices_index += 1
                     # In case the object has semantics they are accordingly stored as well
                     store_semantics(minimal_json,city_object,index,original_objects_name,face)
-                    
+          
         progress += 1
-        print("Appending geometries, semantics, attributes: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+        print("Appending geometries, vertices, semantics, attributes: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
         
     export_parent_child(minimal_json)
-    write_vertices_to_CityJSON(city_object,minimal_json,vertices,len(vertices))
     export_transformation_parameters(minimal_json)
     export_metadata(minimal_json)
             

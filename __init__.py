@@ -11,12 +11,12 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper
 from .core.objects import CityJSONParser, cityJSON_exporter
 
 bl_info = {
-    "name": "Import CityJSON files",
+    "name": "Up3date",
     "author": "Konstantinos Mastorakis",
     "version": (1, 0),
     "blender": (2, 80, 0),
-    "location": "File > Import > CityJSON (.json)",
-    "description": "Visualize 3D City Models encoded in CityJSON format",
+    "location": "File > Import > CityJSON (.json) || File > Export > CityJSON (.json)",
+    "description": "Visualize, edit and export 3D City Models encoded in CityJSON format",
     "warning": "",
     "wiki_url": "",
     "category": "Import-Export",

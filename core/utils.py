@@ -179,38 +179,39 @@ def bbox(objects):
 
     return world_min_extent,world_max_extent
 
-def write_vertices_to_CityJSON(city_object,minimal_json,vertices,progress_max):
+def write_vertices_to_CityJSON(city_object,vertex,minimal_json):
     """ Writing vertices to minimal_json after translation to the original position. """
     # Initialize progress status
     progress = 0
-    for vert in vertices:
-        coord = city_object.matrix_world @ vert
-        if 'transformed' in bpy.context.scene.world and "Axis_Origin_X_translation" in bpy.context.scene.world:
-            #First translate back to the original CRS coordinates 
-            x,y,z = coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],coord[1]\
-                    -bpy.context.scene.world["Axis_Origin_Y_translation"],coord[2]\
-                    -bpy.context.scene.world["Axis_Origin_Z_translation"]
-            #Second transform the original CRS coordinates based on the transform parameters of the original CityJSON file
-            x = round((x - bpy.context.scene.world['transform.X_translate'])/ bpy.context.scene.world['transform.X_scale'])
-            y = round((y - bpy.context.scene.world['transform.Y_translate'])/ bpy.context.scene.world['transform.Y_scale'])
-            z = round((z - bpy.context.scene.world['transform.Z_translate'])/ bpy.context.scene.world['transform.Z_scale'])
-            minimal_json['vertices'].append([x,y,z])
-            progress +=1
-            print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
-        elif "Axis_Origin_X_translation" in bpy.context.scene.world:
-            minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],\
-                                             coord[1]-bpy.context.scene.world["Axis_Origin_Y_translation"],\
-                                             coord[2]-bpy.context.scene.world["Axis_Origin_Z_translation"]])
-            progress +=1
-            print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
-        else:
-            minimal_json['vertices'].append([coord[0],coord[1],coord[2]])
+    coord = city_object.matrix_world @ vertex
+    if 'transformed' in bpy.context.scene.world and "Axis_Origin_X_translation" in bpy.context.scene.world:
+        #First translate back to the original CRS coordinates 
+        x,y,z = coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],coord[1]\
+                -bpy.context.scene.world["Axis_Origin_Y_translation"],coord[2]\
+                -bpy.context.scene.world["Axis_Origin_Z_translation"]
+        #Second transform the original CRS coordinates based on the transform parameters of the original CityJSON file
+        x = round((x - bpy.context.scene.world['transform.X_translate'])/ bpy.context.scene.world['transform.X_scale'])
+        y = round((y - bpy.context.scene.world['transform.Y_translate'])/ bpy.context.scene.world['transform.Y_scale'])
+        z = round((z - bpy.context.scene.world['transform.Z_translate'])/ bpy.context.scene.world['transform.Z_scale'])
+        minimal_json['vertices'].append([x,y,z])
+        progress +=1
+        #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+    elif "Axis_Origin_X_translation" in bpy.context.scene.world:
+        minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],\
+                                            coord[1]-bpy.context.scene.world["Axis_Origin_Y_translation"],\
+                                            coord[2]-bpy.context.scene.world["Axis_Origin_Z_translation"]])
+        progress +=1
+        #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
+    else:
+        minimal_json['vertices'].append([coord[0],coord[1],coord[2]])
+        progress +=1
+        #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     return None
 
 def export_transformation_parameters(minimal_json):
 
     if 'transformed' in bpy.context.scene.world:
-        print ("\nExporting transform parameters...")
+        print ("Exporting transformation parameters...")
         minimal_json.update({'transform':{}})
         minimal_json['transform'].update({'scale':[]})
         minimal_json['transform'].update({'translate':[]})
