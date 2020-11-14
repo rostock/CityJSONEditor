@@ -110,9 +110,13 @@ In case the attributes have to be nested, for example the `postal code` of an `a
 
 ![](new_object_empty.png)
 
-3. If the semantics of a *(`LoD 2` or above)* `geometry` surface are known, they can be assigned as `materials` to the respective faces. You will need to create a new material inside `Blender` and name it after the `semantics` of the surface *(`WallSurface`, `RoofSurface`, `GroundSurface` etc)*. Then you have to select the geometry in `Object Mode`, hit the `tab` button to swap to `Edit Mode` and click the `Face Select` button right next to the `Edit Mode` option *(as explained under the 5th `Useful tip` in the section above)*. With the appropriate face selected you can assign the desired `material / semantic` to that specific face. In case you are working with a pre-imported file you can select an already existing material as long as it has the same name as the semantic you want to add. Don't worry if the material's name is `WallSurface.001` from a previously imported model etc.*<br>
+3. If the semantics of a *(`LoD 2` or above)* `geometry` surfaces are known and you want to add them, they can be assigned (again) as `Custom Properties` of `Materials` to the respective faces. For every `Mesh / Geometry` object `Blender` allows the creation of `Materials`. To assign semantics that will be exported in the `CityJSON` file, you will need to first create (a) new material(s) inside the newly added `Mesh / Geometry` object (just select the object in `Object Mode` and go to the `Materials` tab). If working with a pre-imported file, you can select an already existing material. Don't worry if the materials' names look like `WallSurface.001` etc. The only information exported is the value of the `Custom Property` `type` of the material (i.e. the semantic).<br>
+In the case of creating new materials you need to add a `Custom Property` to each one of them which must look like the following: `type: Semantic_name` *(`WallSurface`, `RoofSurface`, `GroundSurface` etc)* (see also picture below).
 
-**\*Important: There is a bug that when adding and assigning a new `material` at a geometry's face causes the exporter to crash upon exporting. I plan to fix this bug but until then and if you face this issue just delete all the materials from that specific object.**
+![](semantic_property.png)
+
+ After successfully adding the material(s) and the `Custom Property` to it, select the geometry in `Object Mode`, hit the `TAB` button to swap to `Edit Mode` and click the `Face Select` button right next to the `Edit Mode` option *(as explained under the 5th `Useful tip` in the section above)*. 
+ With the appropriate face selected, select the material you want and with the face selected hit the `Assign` button to link that material to the face. 
 
 4. Finally, go to `File > Export > CityJSON (.json)` and export the new instance. Voila!
 
