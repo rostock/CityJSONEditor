@@ -76,12 +76,12 @@ In case you can't see the model, select an object from the `Outliner`* (always i
 - To see the semantics of each surface, select an object in `Object Mode`, hit `TAB` to toggle `Edit Mode` and click `Face Select` (top left of the viewport between the `Edit Mode` and the `View` button). Select a face of the object and click on the `Material Properties` tab at the bottom right. Scroll down and click on `Custom Properties`(see screenshot below).
 
 
-![](attributes.png) 
-![](semantics.png)
+![Accessing the attributes of objects](images/attributes.png) 
+![Accessing the semantics of LoD2 (or higher) geometries](images/semantics.png)
 
 - `Blender` translates the 3D city model at the beginning of the axis upon importing. The translation parameters and the `CRS` are visible under the `World Properties` for transforming the coordinates back to original if needed.
 
-![](world_properties.png) 
+![The translation parameters with the CRS information](images/world_properties.png) 
 
 
 
@@ -102,20 +102,20 @@ For every `Mesh / geometry` 2 more things needs to be added as `Custom Propertie
 * `type`: the_surface_type (*`Surface`, `MultiSurface`, `CompositeSurface` and `Solid`* are accepted) 
 * `lod` : the_number_of_lod
 
-![](new_object_mesh.png) 
+![Adding a new Mesh object with its necessary custom properties](images/new_object_mesh.png) 
 
 2. An `Empty object` representing the `CityObject` has to be created named as `ID_of_object` *(should be exactly the same name as the `Mesh` described above without the `0: [LoD0] ` prefix)*. To rename any object just double-click on it in the `Outliner` and type a new name. <br>
 This object will be the `parent` for the various `LoD` geometries that a `CityObject` might have. For any `CityObject's` *(aka building's)* attribute you wish to store, a new `Custom  Property` has to be added to the `Empty Object`. You have to manually add them via `Blender's` graphical interface exactly the same way as described in `step 1`.<br> 
 In case the attributes have to be nested, for example the `postal code` of an `address`, then the `Custom Property` key should be `address.postalcode` so `Up3date` can understand the nested attribute structure from the `.` and handle it accordingly *(see picture below)*.
 
-![](new_object_empty.png)
+![Adding the parent Empty object (parent of the Mesh object) with (optional) custom properties](images/new_object_empty.png)
 
 3. If the semantics of a *(`LoD 2` or above)* `geometry` surfaces are known and you want to add them, they can be assigned (again) as `Custom Properties` of `Materials` to the respective faces. For every `Mesh / Geometry` object `Blender` allows the creation of `Materials`. To assign semantics that will be exported in the `CityJSON` file, you will need to first create (a) new material(s) inside the newly added `Mesh / Geometry` object (just select the object in `Object Mode` and go to the `Materials` tab). If working with a pre-imported file, you can select an already existing material. Don't worry if the materials' names look like `WallSurface.001` etc. The only information exported is the value of the `Custom Property` `type` of the material (i.e. the semantic).<br>
 In the case of creating new materials you need to add a `Custom Property` to each one of them which must look like the following: `type: Semantic_name` *(`WallSurface`, `RoofSurface`, `GroundSurface` etc)* (see also picture below).<br>
 After successfully adding the material(s) and the `Custom Property`, select the geometry in `Object Mode`, hit the `tab` button to swap to `Edit Mode` and click the `Face Select` button right next to the `Edit Mode` option *(as explained under the 5th `Useful tip` in the section above)*.<br>
 With the appropriate face selected select the appropriate material and hit the `Assign` button to link that material to the face.
 
- ![](semantic_property.png)
+ ![Adding semantic information to an LoD2 (or higher) geometry surface](images/semantic_property.png)
 
 4. Finally, go to `File > Export > CityJSON (.json)` and export the new instance. Voila!
 
