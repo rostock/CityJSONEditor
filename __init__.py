@@ -8,7 +8,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from .core.objects import CityJSONParser, cityJSON_exporter
+from .core.objects import CityJSONParser, CityJSONExporter
 
 bl_info = {
     "name": "Up3date",
@@ -44,7 +44,7 @@ class ImportCityJSON(Operator, ImportHelper):
                 "Creates materials based on the type of city object")),
         description=(
             "Create materials based on city object or semantic"
-            " surfaces."
+            " surfaces"
         )
     )
 
@@ -84,8 +84,30 @@ class ExportCityJSON(Operator, ExportHelper):
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
 
+    # single_lod_switch: BoolProperty(
+    #     name="Export single LoD",
+    #     description="Enable to export only a single LoD",
+    #     default=False,
+    #     )
+
+    # export_single_lod: EnumProperty(
+    #     name="Select LoD :",
+    #     items=(('LoD0', "LoD 0",
+    #             "Export only LoD 0"),
+    #         ('LoD1', "LoD 1",
+    #             "Export only LoD 1"),
+    #         ('LoD2', "LoD 2",
+    #             "Export only LoD 2"),
+    #             ),
+    #     description=(
+    #         "Select which LoD should be exported"            
+    #     )
+    # )
     def execute(self, context):
-        return cityJSON_exporter(context, self.filepath)
+        
+        exporter = CityJSONExporter(self.filepath)
+
+        return exporter.execute()
 
 classes = (
     ImportCityJSON,

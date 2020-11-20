@@ -94,15 +94,84 @@ def clean_buffer(vertices, bounds):
 
     return new_vertices, new_bounds
 
+def get_geometry_name(objid, geom, index):
+    """Returns the name of the provided geometry"""
+    if 'lod' in geom:
+        return "{index}: [LoD{lod}] {name}".format(name=objid, lod=geom['lod'], index=index)
+    else:
+        return "{index}: [GeometryInstance] {name}".format(name=objid, index=index)
+
+def create_empty_object(name):
+    """Returns an empty blender object"""
+
+    new_object = bpy.data.objects.new(name, None)
+
+    return new_object
+
+def create_mesh_object(name, vertices, faces, materials=[], material_indices=[]):
+    """Returns a mesh blender object"""
+
+    mesh_data = None
+
+    if faces:
+        mesh_data = bpy.data.meshes.new(name)
+
+        for material in materials:
+            mesh_data.materials.append(material)
+
+        indices = [i for face in faces for i in face]
+
+        mesh_data.vertices.add(len(vertices))
+        mesh_data.loops.add(len(indices))
+        mesh_data.polygons.add(len(faces))
+
+        coords = [c for v in vertices for c in v]
+
+        loop_totals = [len(face) for face in faces]
+        loop_starts = []
+        i = 0
+        for face in faces:
+            loop_starts.append(i)
+            i += len(face)
+
+        mesh_data.vertices.foreach_set("co", coords)
+        mesh_data.loops.foreach_set("vertex_index", indices)
+        mesh_data.polygons.foreach_set("loop_start", loop_starts)
+        mesh_data.polygons.foreach_set("loop_total", loop_totals)
+        if len(material_indices) == len(faces):
+            mesh_data.polygons.foreach_set("material_index", material_indices)
+        elif len(material_indices) > len(faces):
+            print("Object {name} has {num_faces} faces but {num_surfaces} semantic surfaces!"
+                  .format(name=name,
+                          num_faces=len(faces),
+                          num_surfaces=len(material_indices)))
+
+        mesh_data.update()
+
+    new_object = bpy.data.objects.new(name, mesh_data)
+
+    return new_object
+
+def get_collection(collection_name):
+    """Returns a collection with the given name"""
+
+    if collection_name in bpy.data.collections:
+        return bpy.data.collections[collection_name]
+    
+    new_collection = bpy.data.collections.new(collection_name)
+    bpy.context.scene.collection.children.link(new_collection)
+
+    return new_collection
+
 ########## Exporter functions ##########
 
-def store_semantics (minimal_json,city_object,index,original_objects_name,face):
+def store_semantics (init_json,city_object,index,CityObject_Id,face):
     """Stores the semantics from the objects materials"""
     if city_object.data.materials:
-        minimal_json["CityObjects"][original_objects_name]["geometry"][index]['semantics'].setdefault('values',[[]])
-        minimal_json["CityObjects"][original_objects_name]["geometry"][index]['semantics']['values'][0].append(face.index)
+        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics'].setdefault('values',[[]])
+        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0].append(face.index)
         surface_semantic = city_object.data.materials[face.material_index]['type']
-        minimal_json["CityObjects"][original_objects_name]["geometry"][index]['semantics'].setdefault('surfaces',[]).append({'type':surface_semantic})
+        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics'].setdefault('surfaces',[]).append({'type':surface_semantic})
 
     return None
 
@@ -178,7 +247,7 @@ def bbox(objects):
 
     return world_min_extent,world_max_extent
 
-def write_vertices_to_CityJSON(city_object,vertex,minimal_json):
+def write_vertices_to_CityJSON(city_object,vertex,init_json):
     """ Writing vertices to minimal_json after translation to the original position. """
     # Initialize progress status
     progress = 0
@@ -192,58 +261,58 @@ def write_vertices_to_CityJSON(city_object,vertex,minimal_json):
         x = round((x - bpy.context.scene.world['transform.X_translate'])/ bpy.context.scene.world['transform.X_scale'])
         y = round((y - bpy.context.scene.world['transform.Y_translate'])/ bpy.context.scene.world['transform.Y_scale'])
         z = round((z - bpy.context.scene.world['transform.Z_translate'])/ bpy.context.scene.world['transform.Z_scale'])
-        minimal_json['vertices'].append([x,y,z])
+        init_json['vertices'].append([x,y,z])
         progress +=1
         #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     elif "Axis_Origin_X_translation" in bpy.context.scene.world:
-        minimal_json['vertices'].append([coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],\
+        init_json['vertices'].append([coord[0]-bpy.context.scene.world["Axis_Origin_X_translation"],\
                                             coord[1]-bpy.context.scene.world["Axis_Origin_Y_translation"],\
                                             coord[2]-bpy.context.scene.world["Axis_Origin_Z_translation"]])
         progress +=1
         #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     else:
-        minimal_json['vertices'].append([coord[0],coord[1],coord[2]])
+        init_json['vertices'].append([coord[0],coord[1],coord[2]])
         progress +=1
         #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     return None
 
-def export_transformation_parameters(minimal_json):
+def export_transformation_parameters(init_json):
 
     if 'transformed' in bpy.context.scene.world:
         print ("Exporting transformation parameters...")
-        minimal_json.update({'transform':{}})
-        minimal_json['transform'].update({'scale':[]})
-        minimal_json['transform'].update({'translate':[]})
+        init_json.update({'transform':{}})
+        init_json['transform'].update({'scale':[]})
+        init_json['transform'].update({'translate':[]})
 
-        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.X_scale'])
-        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.Y_scale'])
-        minimal_json['transform']['scale'].append(bpy.context.scene.world['transform.Z_scale'])
+        init_json['transform']['scale'].append(bpy.context.scene.world['transform.X_scale'])
+        init_json['transform']['scale'].append(bpy.context.scene.world['transform.Y_scale'])
+        init_json['transform']['scale'].append(bpy.context.scene.world['transform.Z_scale'])
 
-        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.X_translate'])
-        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.Y_translate'])
-        minimal_json['transform']['translate'].append(bpy.context.scene.world['transform.Z_translate'])
+        init_json['transform']['translate'].append(bpy.context.scene.world['transform.X_translate'])
+        init_json['transform']['translate'].append(bpy.context.scene.world['transform.Y_translate'])
+        init_json['transform']['translate'].append(bpy.context.scene.world['transform.Z_translate'])
     
     return None
 
-def export_metadata(minimal_json):
+def export_metadata(init_json):
     print ("Exporting metadata...")
     #Check if model's reference system exists
     if 'CRS' in bpy.context.scene.world:
-        minimal_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
-    minimal_json['metadata'].update({'geographicalExtent':[]})
+        init_json['metadata'].update({'referenceSystem':bpy.context.scene.world["CRS"]})
+    init_json['metadata'].update({'geographicalExtent':[]})
     # Calculation of the bounding box of the whole area to get the geographic extents
     minim,maxim = bbox(bpy.data.objects)
 
     #Updating the metadata tag
     print ("Appending geographical extent...")
     for extent_coord in minim:
-        minimal_json['metadata']['geographicalExtent'].append(extent_coord) 
+        init_json['metadata']['geographicalExtent'].append(extent_coord) 
     for extent_coord in maxim:
-        minimal_json['metadata']['geographicalExtent'].append(round(extent_coord,3)) 
+        init_json['metadata']['geographicalExtent'].append(round(extent_coord,3)) 
 
     return None
 
-def export_parent_child(minimal_json):
+def export_parent_child(init_json):
     """ Store parents/children tags into CityJSON file
         Going again through the loop because there is the case that the object whose tag is attempted to be updated
         is not yet created if this code is run iin the above loop.
@@ -254,32 +323,32 @@ def export_parent_child(minimal_json):
         if city_object.parent and city_object.type =="EMPTY":
             parents_id = city_object.parent.name
             #Create children node/tag below the parent's ID and assign to it the children's name
-            minimal_json["CityObjects"][parents_id].setdefault('children',[])
-            minimal_json["CityObjects"][parents_id]['children'].append(city_object.name)
+            init_json["CityObjects"][parents_id].setdefault('children',[])
+            init_json["CityObjects"][parents_id]['children'].append(city_object.name)
             #Create the "parents" tag below the children's ID and assign to it the parent's name
-            minimal_json["CityObjects"][city_object.name].update({'parents':[]})
-            minimal_json["CityObjects"][city_object.name]['parents'].append(parents_id)
+            init_json["CityObjects"][city_object.name].update({'parents':[]})
+            init_json["CityObjects"][city_object.name]['parents'].append(parents_id)
 
     return None
 
-def export_attributes(split,minimal_json,name,attribute):
+def export_attributes(split,init_json,CityObject_Id,attribute):
     """ Storing the attributes back to the dictionary. 
         The following code works only up to 3 levels of nested attributes
         TODO Future suggestion: Make a function out of this that works for any level of nested attributes."""       
     if len(split)==3:
-        if not (split[0] in  minimal_json["CityObjects"][name]):
-            minimal_json["CityObjects"][name].update({split[0]:{}})
-        if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):    
-            minimal_json["CityObjects"][name][split[0]].update({split[1]:{}})
-        if not (split[2] in  minimal_json["CityObjects"][name][split[0]][split[1]]):   
-            minimal_json["CityObjects"][name][split[0]][split[1]].update({split[2]:attribute})
+        if not (split[0] in init_json["CityObjects"][CityObject_Id]):
+            init_json["CityObjects"][CityObject_Id].update({split[0]:{}})
+        if not (split[1] in init_json["CityObjects"][CityObject_Id][split[0]]):    
+            init_json["CityObjects"][CityObject_Id][split[0]].update({split[1]:{}})
+        if not (split[2] in init_json["CityObjects"][CityObject_Id][split[0]][split[1]]):   
+            init_json["CityObjects"][CityObject_Id][split[0]][split[1]].update({split[2]:attribute})
     elif len(split)==2:
-        if not (split[0] in  minimal_json["CityObjects"][name]):
-            minimal_json["CityObjects"][name].update({split[0]:{}})
-        if not (split[1] in  minimal_json["CityObjects"][name][split[0]]):
-            minimal_json["CityObjects"][name][split[0]].update({split[1]:attribute})
+        if not (split[0] in init_json["CityObjects"][CityObject_Id]):
+            init_json["CityObjects"][CityObject_Id].update({split[0]:{}})
+        if not (split[1] in init_json["CityObjects"][CityObject_Id][split[0]]):
+            init_json["CityObjects"][CityObject_Id][split[0]].update({split[1]:attribute})
     elif len(split)==1:
-        if not (split[0] in  minimal_json["CityObjects"][name]):
-            minimal_json["CityObjects"][name].update({split[0]:attribute})
+        if not (split[0] in init_json["CityObjects"][CityObject_Id]):
+            init_json["CityObjects"][CityObject_Id].update({split[0]:attribute})
 
     return None
