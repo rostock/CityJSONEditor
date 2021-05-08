@@ -9,6 +9,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.objects import CityJSONParser, CityJSONExporter
+from .core import ui, prop, operator
 
 bl_info = {
     "name": "Up3date",
@@ -111,7 +112,10 @@ class ExportCityJSON(Operator, ExportHelper):
 
 classes = (
     ImportCityJSON,
-    ExportCityJSON
+    ExportCityJSON,
+    prop.UP3DATE_CityjsonfyProperties,
+    operator.UP3DATECityjsonfy,
+    ui.UP3DATE_PT_gui
 )
 
 def menu_func_export(self, context):
@@ -128,7 +132,7 @@ def register():
 
     for cls in classes:
         bpy.utils.register_class(cls)
-
+    bpy.types.Scene.cityjsonfy_properties = bpy.props.PointerProperty(type=prop.UP3DATE_CityjsonfyProperties)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
@@ -140,6 +144,8 @@ def unregister():
 
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    del bpy.types.Scene.cityjsonfy_properties
 
 if __name__ == "__main__":
     register()
