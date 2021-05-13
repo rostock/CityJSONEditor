@@ -276,7 +276,7 @@ def write_vertices_to_CityJSON(city_object,vertex,init_json):
         #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     return None
 
-def remove_vertex_duplicates(self, init_json, precision=3):
+def remove_vertex_duplicates(init_json, precision=3):
     # method from https://github.com/cityjson/cjio/blob/faf422afe94b4787aeffa9b2e53ee71b32546320/cjio/cityjson.py#L1208
     if "transform" in init_json:
         precision = 0

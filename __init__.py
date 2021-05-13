@@ -92,10 +92,10 @@ class ExportCityJSON(Operator, ExportHelper):
 
     precision: IntProperty(
         name="Precision",
-        description="Decimals to check for vertex duplicates",
         default=5,
-        hard_min=0,
-        hard_max=12
+        description="Decimals to check for vertex duplicates",
+        min=0,
+        max=12,
     )
     # single_lod_switch: BoolProperty(
     #     name="Export single LoD",
@@ -119,9 +119,8 @@ class ExportCityJSON(Operator, ExportHelper):
     def execute(self, context):
         
         exporter = CityJSONExporter(self.filepath,
-                                    check_for_duplicates = self.check_for_duplicates,
-                                    precision=self.precision,
-                                    )
+                                    check_for_duplicates=self.check_for_duplicates,
+                                    precision=self.precision)
         return exporter.execute()
 
 classes = (
@@ -134,7 +133,6 @@ classes = (
 
 def menu_func_export(self, context):
     """Defines the menu item for CityJSON import"""
-
     self.layout.operator(ExportCityJSON.bl_idname, text="CityJSON (.json)")
 
 def menu_func_import(self, context):
