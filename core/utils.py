@@ -276,6 +276,46 @@ def write_vertices_to_CityJSON(city_object,vertex,init_json):
         #print("Appending vertices into CityJSON: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
     return None
 
+def remove_vertex_duplicates(self, init_json, precision=3):
+    # method from https://github.com/cityjson/cjio/blob/faf422afe94b4787aeffa9b2e53ee71b32546320/cjio/cityjson.py#L1208
+    if "transform" in init_json:
+        precision = 0
+
+    def update_geom_indices(a, newids):
+        for i, each in enumerate(a):
+            if isinstance(each, list):
+                update_geom_indices(each, newids)
+            else:
+                a[i] = newids[each]
+    # --
+    totalinput = len(init_json["vertices"])
+    h = {}
+    newids = [-1] * len(init_json["vertices"])
+    newvertices = []
+    for i, v in enumerate(init_json["vertices"]):
+        s = "{{x:.{p}f}} {{y:.{p}f}} {{z:.{p}f}}".format(p=precision).format(x=v[0], y=v[1], z=v[2])
+        if s not in h:
+            newid = len(h)
+            newids[i] = newid
+            h[s] = newid
+            newvertices.append(s)
+        else:
+            newids[i] = h[s]
+    # -- update indices
+    for theid in init_json["CityObjects"]:
+        for g in init_json['CityObjects'][theid]['geometry']:
+            update_geom_indices(g["boundaries"], newids)
+    # -- replace the vertices, innit?
+    newv2 = []
+    for v in newvertices:
+        if "transform" in init_json:
+            a = list(map(int, v.split()))
+        else:
+            a = list(map(float, v.split()))
+        newv2.append(a)
+    init_json["vertices"] = newv2
+    return totalinput - len(init_json["vertices"])
+
 def export_transformation_parameters(init_json):
 
     if 'transformed' in bpy.context.scene.world:
