@@ -168,10 +168,17 @@ def get_collection(collection_name):
 def store_semantics (init_json,city_object,index,CityObject_Id,face):
     """Stores the semantics from the objects materials"""
     if city_object.data.materials:
-        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics'].setdefault('values',[[]])
-        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0].append(face.index)
-        surface_semantic = city_object.data.materials[face.material_index]['type']
-        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics'].setdefault('surfaces',[]).append({'type':surface_semantic})
+        semantic_surface = city_object.data.materials[face.material_index]['type']
+        semantics = init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']
+        existing_semantic_surfaces = [surface["type"] for surface in semantics['surfaces']]
+
+        # this would be faster in a lookup dict
+        if semantic_surface not in existing_semantic_surfaces:
+            semantics['surfaces'].append({'type': semantic_surface})
+            existing_semantic_surfaces.append(semantic_surface)
+
+        semantic_surface_index = existing_semantic_surfaces.index(semantic_surface)
+        semantics['values'][0].append(semantic_surface_index)
 
     return None
 
