@@ -15,7 +15,8 @@ from .utils import (assign_properties, clean_buffer, clean_list,
                     remove_scene_objects, get_geometry_name, create_empty_object,
                     create_mesh_object, get_collection, write_vertices_to_CityJSON,
                     remove_vertex_duplicates, export_transformation_parameters,
-                    export_metadata, export_parent_child, export_attributes, store_semantics)
+                    export_metadata, export_parent_child, export_attributes,
+                    store_semantic_surfaces, link_face_semantic_surface)
 
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
@@ -287,10 +288,14 @@ class CityJSONExporter:
                                       vertices,cj_next_index):        
         #Index in the geometry list that the new geometry needs to be stored.
         index = len(init_json["CityObjects"][CityObject_id]['geometry'])-1
+
+        # Create semantic surfaces
+        semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
         if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
             # Browsing through faces and their vertices of every object.
             for face in object_faces:
                 init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([[]])
+
                 
                 for i in range(len(object_faces[face.index].vertices)):
                     original_index = object_faces[face.index].vertices[i]
@@ -305,7 +310,7 @@ class CityJSONExporter:
                     cj_next_index += 1
 
                 # In case the object has semantics they are accordingly stored as well
-                store_semantics(init_json,city_object,index,CityObject_id,face)
+                link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
 
         if city_object['type'] == 'Solid':
             init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([])
@@ -323,7 +328,7 @@ class CityJSONExporter:
                         init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][0][face.index][0].append(cj_next_index)
                         cj_next_index += 1
                 # In case the object has semantics they are accordingly stored as well
-                store_semantics(init_json,city_object,index,CityObject_id,face)
+                link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
         return cj_next_index
 
     def execute(self):
