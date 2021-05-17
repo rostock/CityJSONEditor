@@ -184,9 +184,14 @@ def store_semantic_surfaces(init_json, city_object, index, CityObject_Id):
 
     semantics = init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']
     semantic_surface_lookup = {}
-    for semantic_surface_index, material in enumerate(city_object.data.materials):
+    semantic_surface_index = 0
+    for material in city_object.data.materials:
+        if material is None:
+            continue
+
         semantics['surfaces'].append({'type': material['type']})
         semantic_surface_lookup[material.name] = semantic_surface_index
+        semantic_surface_index += 1
 
     return semantic_surface_lookup
 
@@ -194,6 +199,9 @@ def store_semantic_surfaces(init_json, city_object, index, CityObject_Id):
 def link_face_semantic_surface(init_json, city_object, index, CityObject_Id, semantic_surface_lookup, face):
     """Links the object faces to corresponding semantic surfaces"""
     if not city_object.data.materials:
+        return None
+    if city_object.data.materials[face.material_index] is None:
+        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0].append(None)
         return None
 
     semantic_surface_name = city_object.data.materials[face.material_index].name
