@@ -14,8 +14,9 @@ from .utils import (assign_properties, clean_buffer, clean_list,
                     coord_translate_axis_origin, coord_translate_by_offset,
                     remove_scene_objects, get_geometry_name, create_empty_object,
                     create_mesh_object, get_collection, write_vertices_to_CityJSON,
-                    export_transformation_parameters, export_metadata,
-                    export_parent_child,export_attributes,store_semantics)
+                    remove_vertex_duplicates, export_transformation_parameters,
+                    export_metadata, export_parent_child, export_attributes,
+                    store_semantic_surfaces, link_face_semantic_surface)
 
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
@@ -215,8 +216,10 @@ class CityJSONParser:
 
 class CityJSONExporter:
 
-    def __init__ (self,filepath):
+    def __init__ (self, filepath, check_for_duplicates=True, precision=3):
         self.filepath = filepath
+        self.check_for_duplicates = check_for_duplicates
+        self.precision = precision
     
     def initialize_dictionary(self):
         empty_json = {
@@ -263,7 +266,7 @@ class CityJSONExporter:
                 #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra keys (within_geometry) to store it.
                 #Otherwise just create the rest of the tags
                 if city_object.data.materials:
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{},'texture':{},'lod':city_object['lod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})
                 else:
                     init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
             else:
@@ -285,30 +288,29 @@ class CityJSONExporter:
                                       vertices,cj_next_index):        
         #Index in the geometry list that the new geometry needs to be stored.
         index = len(init_json["CityObjects"][CityObject_id]['geometry'])-1
-        if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface' :
+
+        # Create semantic surfaces
+        semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
+        if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
             # Browsing through faces and their vertices of every object.
             for face in object_faces:
                 init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([[]])
+
                 
                 for i in range(len(object_faces[face.index].vertices)):
                     original_index = object_faces[face.index].vertices[i]
                     get_vertex = object_verts[original_index]
-                    # Check if vertex already is saved.
-                    # If yes append its index at the vertices list into the cityjson file.
-                    # If no append this vertex in the vertices list then append its vertex (cityjson_vertices_index) and increment this index by one.
-                    if get_vertex.co in vertices:    
-                        vert_index = vertices.index(get_vertex.co)
-                        init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][face.index][0].append(vert_index)
-                    else:
-                        #Write vertex to init_json at this point so the mesh_object.world_matrix (aka transformation matrix) is always the
-                        #correct one. With the previous way it would take the last object's transformation matrix and would potentially lead to wrong final 
-                        #coordinate to be exported.
-                        write_vertices_to_CityJSON(city_object,get_vertex.co,init_json)
-                        vertices.append(get_vertex.co)
-                        init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][face.index][0].append(cj_next_index)
-                        cj_next_index += 1
+
+                    #Write vertex to init_json at this point so the mesh_object.world_matrix (aka transformation matrix) is always the
+                    #correct one. With the previous way it would take the last object's transformation matrix and would potentially lead to wrong final
+                    #coordinate to be exported.
+                    write_vertices_to_CityJSON(city_object,get_vertex.co,init_json)
+                    vertices.append(get_vertex.co)
+                    init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][face.index][0].append(cj_next_index)
+                    cj_next_index += 1
+
                 # In case the object has semantics they are accordingly stored as well
-                store_semantics(init_json,city_object,index,CityObject_id,face)
+                link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
 
         if city_object['type'] == 'Solid':
             init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([])
@@ -326,7 +328,7 @@ class CityJSONExporter:
                         init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][0][face.index][0].append(cj_next_index)
                         cj_next_index += 1
                 # In case the object has semantics they are accordingly stored as well
-                store_semantics(init_json,city_object,index,CityObject_id,face)
+                link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
         return cj_next_index
 
     def execute(self):
@@ -365,11 +367,13 @@ class CityJSONExporter:
             
             progress += 1
             print("Appending geometries, vertices, semantics, attributes: {percent}% completed".format(percent=round(progress * 100 / progress_max, 1)),end="\r")
-            
+
+        if self.check_for_duplicates:
+            remove_vertex_duplicates(init_json, self.precision)
         export_parent_child(init_json)
         export_transformation_parameters(init_json)
         export_metadata(init_json)
-                
+
         print ("Writing to CityJSON file...")
         #Writing CityJSON file
         with open(self.filepath, 'w', encoding='utf-8') as f:

@@ -4,7 +4,7 @@ import json
 import time
 
 import bpy
-from bpy.props import BoolProperty, EnumProperty, StringProperty
+from bpy.props import BoolProperty, EnumProperty, StringProperty, IntProperty
 from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
@@ -85,6 +85,18 @@ class ExportCityJSON(Operator, ExportHelper):
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
 
+    check_for_duplicates: BoolProperty(
+        name="Remove vertex duplicates",
+        default=True,
+    )
+
+    precision: IntProperty(
+        name="Precision",
+        default=5,
+        description="Decimals to check for vertex duplicates",
+        min=0,
+        max=12,
+    )
     # single_lod_switch: BoolProperty(
     #     name="Export single LoD",
     #     description="Enable to export only a single LoD",
@@ -106,8 +118,9 @@ class ExportCityJSON(Operator, ExportHelper):
     # )
     def execute(self, context):
         
-        exporter = CityJSONExporter(self.filepath)
-
+        exporter = CityJSONExporter(self.filepath,
+                                    check_for_duplicates=self.check_for_duplicates,
+                                    precision=self.precision)
         return exporter.execute()
 
 classes = (
@@ -120,7 +133,6 @@ classes = (
 
 def menu_func_export(self, context):
     """Defines the menu item for CityJSON import"""
-
     self.layout.operator(ExportCityJSON.bl_idname, text="CityJSON (.json)")
 
 def menu_func_import(self, context):
