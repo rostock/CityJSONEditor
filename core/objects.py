@@ -257,7 +257,7 @@ class CityJSONExporter:
     def create_mesh_structure(self,city_object,objid,init_json):
         "Prepares the structure within the empty mesh for storing the geometries, stored the lod and accesses the vertices and faces of the geometry within Blender"
         #Create geometry key within the empty object for storing the LoD(s) 
-        CityObject_id = objid[10:]
+        CityObject_id = objid.split(' ')[2]
         init_json["CityObjects"].setdefault(CityObject_id,{})
         init_json["CityObjects"][CityObject_id].setdefault('geometry',[])
         #Check if the user has assigned the custom properties 'lod' and 'type' correctly 
