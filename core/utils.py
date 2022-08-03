@@ -195,18 +195,24 @@ def store_semantic_surfaces(init_json, city_object, index, CityObject_Id):
 
     return semantic_surface_lookup
 
+def store_texture_props():
+    
+    return 0
 
 def link_face_semantic_surface(init_json, city_object, index, CityObject_Id, semantic_surface_lookup, face):
     """Links the object faces to corresponding semantic surfaces"""
+    print ('hustensaft')
     if not city_object.data.materials:
         return None
     if city_object.data.materials[face.material_index] is None:
-        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0].append(None)
+        # init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0]append(None)  //Auskommentiert von Tim
+        init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'].append(None)
         return None
 
     semantic_surface_name = city_object.data.materials[face.material_index].name
     semantic_surface_index = semantic_surface_lookup[semantic_surface_name]
-    init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0].append(semantic_surface_index)
+    #init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0].append(semantic_surface_index) //Auskommentiert von Tim
+    init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'].append(semantic_surface_index)
 
     return None
 

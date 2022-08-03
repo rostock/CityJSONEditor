@@ -5,7 +5,12 @@ import time
 import sys
 import bpy
 import idprop
+# folgende Importe durch Tim hinzugefügt
+import os
+import shutil
 
+from inspect import getmembers
+from pprint import pprint
 from datetime import datetime
 
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
@@ -233,6 +238,7 @@ class CityJSONExporter:
             }
         return empty_json
 
+    # hier werden die custom prop des leeren Objektes ausgelesen
     def get_custom_properties(self,city_object,init_json,CityObject_id):
         """Creates the required structure according to CityJSON and writes all the object's custom properties (aka attributes)"""
         init_json["CityObjects"].setdefault(CityObject_id,{})
@@ -254,6 +260,7 @@ class CityJSONExporter:
                 attribute=prop[1]
             export_attributes(split,init_json,CityObject_id,attribute)
 
+    # hier wird das Gerüst der JSON-Datei erzeugt, inklusive der Geometrien #Tim
     def create_mesh_structure(self,city_object,objid,init_json):
         "Prepares the structure within the empty mesh for storing the geometries, stored the lod and accesses the vertices and faces of the geometry within Blender"
         #Create geometry key within the empty object for storing the LoD(s) 
@@ -266,7 +273,8 @@ class CityJSONExporter:
                 #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra keys (within_geometry) to store it.
                 #Otherwise just create the rest of the tags
                 if city_object.data.materials:
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})  ##Auskommentiert von Tim
+                    #init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'lod':city_object['lod']})
                 else:
                     init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
             else:
@@ -338,12 +346,18 @@ class CityJSONExporter:
         init_json = self.initialize_dictionary()
         # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
         progress_max = len(bpy.data.objects)
+        print(progress_max)
         # Initialize progress status
         progress = 0
         # Variable to store the next free index that a vertex should be saved in the cityjson file. Avoiding saving duplicates.
         cj_next_index = 0
         # Create a list of vertices to store the global vertices of all objects
         verts = list()
+  
+
+        #relation between texture and subfaces #Tim
+        #pprint(getmembers(bpy.ops.uv.align))
+
         for city_object in bpy.data.objects:
             #Get object's name
             objid = city_object.name
@@ -353,6 +367,7 @@ class CityJSONExporter:
                 self.get_custom_properties(city_object,init_json,objid)                       
             #If the object is MESH means that is an actual geometry contained in the CityJSON file
             if city_object.type =='MESH':
+                #pprint (getmembers(city_object))  ## eingeführt von Tim
                 """ Export geometries with their semantics into CityJSON
                     Geometry type is checked for every object, because the structure that the geometry has to be stored in the cityjson is different depending on the geometry type 
                     In case the object has semantics they are accordingly stored as well using the 'store_semantics' function
@@ -374,10 +389,42 @@ class CityJSONExporter:
         export_transformation_parameters(init_json)
         export_metadata(init_json)
 
+        # build Appearence tree #Tim
+        images = bpy.data.images
+        if images:
+            for img in images:
+                print("YEAS")
+                print (img.filepath_raw)
+        
+
         print ("Writing to CityJSON file...")
         #Writing CityJSON file
         with open(self.filepath, 'w', encoding='utf-8') as f:
+            basePathInfos = bpy.data.filepath.split('\\')
+            baseFileName = basePathInfos [ len(basePathInfos) - 1]
             json.dump(init_json, f, ensure_ascii=False)
+            for image in bpy.data.images:
+                if image.filepath:
+                    fileInfos = image.filepath.split('\\')
+                    fileName = fileInfos[ len(fileInfos) - 1 ]
+                    folder = image.filepath.replace(fileInfos[ len(fileInfos) - 1 ],"")
+
+                    print(bpy.data.filepath)
+
+                    print(fileName)
+                    print(folder)
+
+                    fileInfosTarget =self.filepath.split('\\')
+                    fileNameTarget = fileInfosTarget[ len(fileInfosTarget) - 1]
+                    folderTarget =self.filepath.replace(fileInfosTarget[ len(fileInfosTarget) - 1 ],"")
+                    print(fileNameTarget)
+                    print(folderTarget)
+                
+                    src_path = image.filepath_raw
+                    dst_path = folderTarget + "appearance\\" + fileName
+                    print(src_path)
+                    print(dst_path)
+                    shutil.copy(src_path, dst_path)
         
         end=time.time()
         timestamp = datetime.now()
