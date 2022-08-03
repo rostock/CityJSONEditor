@@ -9,6 +9,7 @@ import idprop
 import os
 import shutil
 
+from pathlib import Path # Tim
 from inspect import getmembers
 from pprint import pprint
 from datetime import datetime
@@ -234,7 +235,7 @@ class CityJSONExporter:
             "metadata": {},
             "CityObjects": {},
             "vertices":[],
-            #"appearance":{}
+            "appearance":{}
             }
         return empty_json
 
@@ -291,7 +292,24 @@ class CityJSONExporter:
 
         return CityObject_id,object_verts,object_faces
 
-
+    def create_appearance_item(path):
+        imageType = "PNG"
+        imageName = "appearance/" + os.path.basename(path)
+        print(imageName)
+        json = {
+            "type": imageType,
+            "image": imageName,
+            "wrapMode":"clamp",
+            "textureType":"unknown",
+            "borderColor":[
+               0.0,
+               0.0,
+               0.0,
+               1.0
+            ]
+            }
+        return json
+        
     def export_geometry_and_semantics(self,city_object,init_json,CityObject_id,object_faces,object_verts,
                                       vertices,cj_next_index):        
         #Index in the geometry list that the new geometry needs to be stored.
@@ -344,6 +362,7 @@ class CityJSONExporter:
         print("\nExporting Blender scene into CityJSON file...")
         #Create the initial structure of the cityjson dictionary
         init_json = self.initialize_dictionary()
+        
         # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
         progress_max = len(bpy.data.objects)
         print(progress_max)
@@ -367,7 +386,6 @@ class CityJSONExporter:
                 self.get_custom_properties(city_object,init_json,objid)                       
             #If the object is MESH means that is an actual geometry contained in the CityJSON file
             if city_object.type =='MESH':
-                #pprint (getmembers(city_object))  ## eingeführt von Tim
                 """ Export geometries with their semantics into CityJSON
                     Geometry type is checked for every object, because the structure that the geometry has to be stored in the cityjson is different depending on the geometry type 
                     In case the object has semantics they are accordingly stored as well using the 'store_semantics' function
@@ -393,8 +411,10 @@ class CityJSONExporter:
         images = bpy.data.images
         if images:
             for img in images:
-                print("YEAS")
-                print (img.filepath_raw)
+                if img.filepath_raw:
+                    path = img.filepath_raw
+                    self.create_appearance_item("huhu")
+                    #init_json["appearance"]["textures"].append(self.create_appearance_item(img.filepath_raw))
         
 
         print ("Writing to CityJSON file...")
@@ -402,29 +422,29 @@ class CityJSONExporter:
         with open(self.filepath, 'w', encoding='utf-8') as f:
             basePathInfos = bpy.data.filepath.split('\\')
             baseFileName = basePathInfos [ len(basePathInfos) - 1]
+            baseFolder = bpy.data.filepath.replace(basePathInfos[ len(basePathInfos) - 1 ],"")
+            
             json.dump(init_json, f, ensure_ascii=False)
             for image in bpy.data.images:
                 if image.filepath:
-                    fileInfos = image.filepath.split('\\')
-                    fileName = fileInfos[ len(fileInfos) - 1 ]
-                    folder = image.filepath.replace(fileInfos[ len(fileInfos) - 1 ],"")
-
-                    print(bpy.data.filepath)
-
-                    print(fileName)
-                    print(folder)
-
+                    fileSourceInfos = image.filepath.split('\\')
+                    fileSourceName = fileSourceInfos[ len(fileSourceInfos) - 1 ]
+                    folderSource = image.filepath.replace(fileSourceInfos[ len(fileSourceInfos) - 1 ],"")
+                    
                     fileInfosTarget =self.filepath.split('\\')
                     fileNameTarget = fileInfosTarget[ len(fileInfosTarget) - 1]
                     folderTarget =self.filepath.replace(fileInfosTarget[ len(fileInfosTarget) - 1 ],"")
-                    print(fileNameTarget)
-                    print(folderTarget)
                 
-                    src_path = image.filepath_raw
-                    dst_path = folderTarget + "appearance\\" + fileName
-                    print(src_path)
-                    print(dst_path)
-                    shutil.copy(src_path, dst_path)
+                    src_path = baseFolder + folderSource.replace("//","") + fileSourceName
+                    dst_path = folderTarget + r"appearance\\" + fileSourceName
+                    
+                    #create appearance folde
+                    parent_dir = "D:/Pycharm projects/"
+                    # Path
+                    path = os.path.join(folderTarget, 'appearance')
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    shutil.copy((r'%s' %src_path), (r'%s' %dst_path))
         
         end=time.time()
         timestamp = datetime.now()
