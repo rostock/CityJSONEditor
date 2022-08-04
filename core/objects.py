@@ -234,8 +234,11 @@ class CityJSONExporter:
             # "extensions": {},
             "metadata": {},
             "CityObjects": {},
-            "vertices":[],
-            "appearance":{}
+            "vertices": [],
+            "appearance": {
+                    "textures": [],
+                    "vertices-texture": []
+                }
             }
         return empty_json
 
@@ -274,8 +277,11 @@ class CityJSONExporter:
                 #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra keys (within_geometry) to store it.
                 #Otherwise just create the rest of the tags
                 if city_object.data.materials:
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})  ##Auskommentiert von Tim
-                    #init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'lod':city_object['lod']})
+                    themeName = 'unnamed'
+                    if 'theme' in bpy.context.scene.world:
+                        themeName =  bpy.context.scene.world["theme"]
+                    #init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})  ##Auskommentiert von Tim
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}},'lod':city_object['lod']})
                 else:
                     init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
             else:
@@ -289,14 +295,16 @@ class CityJSONExporter:
         object_verts = city_object.data.vertices
         #Accessing object's faces
         object_faces = city_object.data.polygons
+        #Accessing object's texture vertexes
+
 
         return CityObject_id,object_verts,object_faces
 
-    def create_appearance_item(path):
+    def create_appearance_item(self, texturePath):
         imageType = "PNG"
-        imageName = "appearance/" + os.path.basename(path)
+        imageName = "appearance/" + os.path.basename(texturePath)
         print(imageName)
-        json = {
+        texture = {
             "type": imageType,
             "image": imageName,
             "wrapMode":"clamp",
@@ -307,8 +315,14 @@ class CityJSONExporter:
                0.0,
                1.0
             ]
-            }
-        return json
+        }
+        return texture
+
+    def create_texture_vertex(self, uv):
+        print (uv.to_tuple())
+        
+
+        return uv.to_tuple()
         
     def export_geometry_and_semantics(self,city_object,init_json,CityObject_id,object_faces,object_verts,
                                       vertices,cj_next_index):        
@@ -372,10 +386,6 @@ class CityJSONExporter:
         cj_next_index = 0
         # Create a list of vertices to store the global vertices of all objects
         verts = list()
-  
-
-        #relation between texture and subfaces #Tim
-        #pprint(getmembers(bpy.ops.uv.align))
 
         for city_object in bpy.data.objects:
             #Get object's name
@@ -413,15 +423,29 @@ class CityJSONExporter:
             for img in images:
                 if img.filepath_raw:
                     path = img.filepath_raw
-                    self.create_appearance_item("huhu")
-                    #init_json["appearance"]["textures"].append(self.create_appearance_item(img.filepath_raw))
-        
+                    init_json['appearance']['textures'].append(self.create_appearance_item(path))
+        #if not len(init_json['appearance']['textures']) > 0:
+            #    del init_json['appearance']
+        #else:
+
+        # build texture vertices
+        #me = bpy.context.object.data
+        me = bpy.data.objects[0].data.polygons
+        pprint(getmembers(me.values))
+        uv_layer = me.uv_layers.active.data
+
+        for poly in me.polygons:
+            for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
+                #print("    Vertex: %d" % me.loops[loop_index].vertex_index)
+                #print("    UV: %r" % uv_layer[loop_index].uv)
+                init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[loop_index].uv))
+        # build texture polygons
+        #if bpy.context.scene.world["theme"] =  bpy.context.scene.world["CRS"]
 
         print ("Writing to CityJSON file...")
         #Writing CityJSON file
         with open(self.filepath, 'w', encoding='utf-8') as f:
             basePathInfos = bpy.data.filepath.split('\\')
-            baseFileName = basePathInfos [ len(basePathInfos) - 1]
             baseFolder = bpy.data.filepath.replace(basePathInfos[ len(basePathInfos) - 1 ],"")
             
             json.dump(init_json, f, ensure_ascii=False)
@@ -432,15 +456,12 @@ class CityJSONExporter:
                     folderSource = image.filepath.replace(fileSourceInfos[ len(fileSourceInfos) - 1 ],"")
                     
                     fileInfosTarget =self.filepath.split('\\')
-                    fileNameTarget = fileInfosTarget[ len(fileInfosTarget) - 1]
                     folderTarget =self.filepath.replace(fileInfosTarget[ len(fileInfosTarget) - 1 ],"")
                 
                     src_path = baseFolder + folderSource.replace("//","") + fileSourceName
                     dst_path = folderTarget + r"appearance\\" + fileSourceName
                     
-                    #create appearance folde
-                    parent_dir = "D:/Pycharm projects/"
-                    # Path
+                    # create parent path for appearance
                     path = os.path.join(folderTarget, 'appearance')
                     if not os.path.exists(path):
                         os.mkdir(path)

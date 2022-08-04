@@ -201,7 +201,6 @@ def store_texture_props():
 
 def link_face_semantic_surface(init_json, city_object, index, CityObject_Id, semantic_surface_lookup, face):
     """Links the object faces to corresponding semantic surfaces"""
-    print ('hustensaft')
     if not city_object.data.materials:
         return None
     if city_object.data.materials[face.material_index] is None:
