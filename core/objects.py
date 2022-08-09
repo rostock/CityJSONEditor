@@ -6,11 +6,10 @@ import time
 import sys
 import bpy
 import idprop
-# folgende Importe durch Tim hinzugefügt
 import os
 import shutil
 
-from pathlib import Path # Tim
+from pathlib import Path
 from inspect import getmembers
 from pprint import pprint
 from datetime import datetime
@@ -243,7 +242,6 @@ class CityJSONExporter:
             }
         return empty_json
 
-    # hier werden die custom prop des leeren Objektes ausgelesen
     def get_custom_properties(self,city_object,init_json,CityObject_id):
         """Creates the required structure according to CityJSON and writes all the object's custom properties (aka attributes)"""
         init_json["CityObjects"].setdefault(CityObject_id,{})
@@ -265,7 +263,6 @@ class CityJSONExporter:
                 attribute=prop[1]
             export_attributes(split,init_json,CityObject_id,attribute)
 
-    # hier wird das Gerüst der JSON-Datei erzeugt, inklusive der Geometrien #Tim
     def create_mesh_structure(self,city_object,objid,init_json):
         "Prepares the structure within the empty mesh for storing the geometries, stored the lod and accesses the vertices and faces of the geometry within Blender"
         #Create geometry key within the empty object for storing the LoD(s) 
@@ -296,12 +293,10 @@ class CityJSONExporter:
         object_verts = city_object.data.vertices
         #Accessing object's faces
         object_faces = city_object.data.polygons
-        #Accessing object's texture vertexes
-        #object_uvCoords = city_object.data.
-
 
         return CityObject_id,object_verts,object_faces
 
+    ##### Texture Export ####
     def create_appearance_item(self, basename):
         imageType = "PNG"
         imageName = "appearance/" + basename
@@ -326,7 +321,8 @@ class CityJSONExporter:
         
 
         return uv.to_tuple()
-        
+    #########################
+
     def export_geometry_and_semantics(self,city_object,init_json,CityObject_id,object_faces,object_verts,
                                       vertices,cj_next_index):        
         #Index in the geometry list that the new geometry needs to be stored.
@@ -335,23 +331,30 @@ class CityJSONExporter:
         # Create semantic surfaces
         semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
         if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
+            
+            ##### Texture Export ####
+            # Build Appearance 
+            for material_slot in city_object.material_slots:
+                image_basename = material_slot.material.node_tree.nodes[2].image.name
+                init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
+            #########################
+
             # Browsing through faces and their vertices of every object.
             for face in object_faces:
                 init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([[]])
-
-                ############################### Hagen ###################################
-                # UV-Parameter des aktuellen CityObjekts
-                # Ausschließlich Betrachtung des ersten Layers, da es in unserem Anwendungsfall nur diesen einen gibt
+                
+                ##### Texture Export ####
+                # Building JSON-Sructure for UV-Mapping
+                init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"].append([[]])
+                # UV layer of the city_object, only the layer with index = 0 is used
                 uv_layer = city_object.data.uv_layers[0].data
-                # Durchlaufen der Vertices einer Fläche
-                """
-                for loop_index in range(face.loop_start, face.loop_start + face.loop_total):
-                    print("Loop Index of Polygon: "+str(loop_index))
-                    # Schreiben der UV-Koordinaten des Vertex in den "Vertex-Texture" Bereich des JSON Objekts
-                    init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[loop_index].uv))
-                """
-                ##########################################################################
-
+                # ID of the material of the currently processed face
+                face_material = face.material_index
+                # Appending the ID of the corresponding appearance as first parameter (mapping material/texture to face UV-Coordinates)
+                init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(face_material)
+                #########################
+            
+                # Vertex Loop 
                 for i in range(len(object_faces[face.index].vertices)):
                     original_index = object_faces[face.index].vertices[i]
                     get_vertex = object_verts[original_index]
@@ -360,23 +363,22 @@ class CityJSONExporter:
                     #correct one. With the previous way it would take the last object's transformation matrix and would potentially lead to wrong final
                     #coordinate to be exported.
                     write_vertices_to_CityJSON(city_object,get_vertex.co,init_json)
-                    ############################### Hagen ###################################
-                    # UV - Coordinates
-                    init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[i].uv))
-                    ##########################################################################
                     vertices.append(get_vertex.co)
+                    # Store Boundaries
                     init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][face.index][0].append(cj_next_index)
-                    ############################### Hagen ###################################
-                    # UV - Areas (work in Progress)
-                    #init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(self.create_texture_vertex(uv_layer[i].uv))
-                    ##########################################################################
-                    ###
-                    
-                    ###
+
+                    ##### Texture Export ####
+                    # Store UV - Coordinates
+                    init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[cj_next_index].uv))
+                    # Store UV - Mapping (UV Coordinates to Faces)
+                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(cj_next_index)
+                    #########################
+
                     cj_next_index += 1
 
                 # In case the object has semantics they are accordingly stored as well
                 link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
+
 
         if city_object['type'] == 'Solid':
 
@@ -452,23 +454,11 @@ class CityJSONExporter:
         export_transformation_parameters(init_json)
         export_metadata(init_json)
 
-
-    ########################################### Hagen ###############################################
-        # Build Appearance
-        for image in bpy.data.images:
-                if image.filepath:
-                    basename = image.name
-                    init_json['appearance']['textures'].append(self.create_appearance_item(basename))
-
-    #################################################################################################
-
         print ("Writing to CityJSON file...")
         #Writing CityJSON file
         with open(self.filepath, 'w', encoding='utf-8') as f:
             basePathInfos = bpy.data.filepath.split('\\')
             baseFolder = bpy.data.filepath.replace(basePathInfos[ len(basePathInfos) - 1 ],"")
-
-            pprint(init_json)
             
             json.dump(init_json, f, ensure_ascii=False)
             for image in bpy.data.images:
