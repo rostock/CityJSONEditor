@@ -53,7 +53,7 @@ class BasicMaterialFactory:
             for surface in geometry['semantics']['surfaces']:
                 mats.append(self.get_material(surface))
 
-            values = clean_list(values)
+            #values = clean_list(values)
 
         return (mats, values)
 

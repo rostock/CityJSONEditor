@@ -1,11 +1,17 @@
 """Module to manipulate objects in Blender regarding CityJSON"""
 
 import json
+from posixpath import basename
 import time
 import sys
 import bpy
 import idprop
+import os
+import shutil
 
+from pathlib import Path
+from inspect import getmembers
+from pprint import pprint
 from datetime import datetime
 
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
@@ -228,8 +234,11 @@ class CityJSONExporter:
             # "extensions": {},
             "metadata": {},
             "CityObjects": {},
-            "vertices":[],
-            #"appearance":{}
+            "vertices": [],
+            "appearance": {
+                    "textures": [],
+                    "vertices-texture": []
+                }
             }
         return empty_json
 
@@ -266,7 +275,11 @@ class CityJSONExporter:
                 #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra keys (within_geometry) to store it.
                 #Otherwise just create the rest of the tags
                 if city_object.data.materials:
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})
+                    themeName = 'unnamed'
+                    if 'theme' in bpy.context.scene.world:
+                        themeName =  bpy.context.scene.world["theme"]
+                    #init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})  ##Auskommentiert von Tim
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}},'lod':city_object['lod']})
                 else:
                     init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
             else:
@@ -283,6 +296,32 @@ class CityJSONExporter:
 
         return CityObject_id,object_verts,object_faces
 
+    ##### Texture Export ####
+    def create_appearance_item(self, basename):
+        imageType = "PNG"
+        imageName = "appearance/" + basename
+        print("Basename: "+str(basename))
+        print(imageName)
+        texture = {
+            "type": imageType,
+            "image": imageName,
+            "wrapMode":"clamp",
+            "textureType":"unknown",
+            "borderColor":[
+               0.0,
+               0.0,
+               0.0,
+               1.0
+            ]
+        }
+        return texture
+
+    def create_texture_vertex(self, uv):
+        print (uv.to_tuple())
+        
+
+        return uv.to_tuple()
+    #########################
 
     def export_geometry_and_semantics(self,city_object,init_json,CityObject_id,object_faces,object_verts,
                                       vertices,cj_next_index):        
@@ -292,11 +331,30 @@ class CityJSONExporter:
         # Create semantic surfaces
         semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
         if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
+            
+            ##### Texture Export ####
+            # Build Appearance 
+            for material_slot in city_object.material_slots:
+                image_basename = material_slot.material.node_tree.nodes[2].image.name
+                init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
+            #########################
+
             # Browsing through faces and their vertices of every object.
             for face in object_faces:
                 init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([[]])
-
                 
+                ##### Texture Export ####
+                # Building JSON-Sructure for UV-Mapping
+                init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"].append([[]])
+                # UV layer of the city_object, only the layer with index = 0 is used
+                uv_layer = city_object.data.uv_layers[0].data
+                # ID of the material of the currently processed face
+                face_material = face.material_index
+                # Appending the ID of the corresponding appearance as first parameter (mapping material/texture to face UV-Coordinates)
+                init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(face_material)
+                #########################
+            
+                # Vertex Loop 
                 for i in range(len(object_faces[face.index].vertices)):
                     original_index = object_faces[face.index].vertices[i]
                     get_vertex = object_verts[original_index]
@@ -306,16 +364,36 @@ class CityJSONExporter:
                     #coordinate to be exported.
                     write_vertices_to_CityJSON(city_object,get_vertex.co,init_json)
                     vertices.append(get_vertex.co)
+                    # Store Boundaries
                     init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][face.index][0].append(cj_next_index)
+
+                    ##### Texture Export ####
+                    # Store UV - Coordinates
+                    init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[cj_next_index].uv))
+                    # Store UV - Mapping (UV Coordinates to Faces)
+                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(cj_next_index)
+                    #########################
+
                     cj_next_index += 1
 
                 # In case the object has semantics they are accordingly stored as well
                 link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
 
+
         if city_object['type'] == 'Solid':
+
             init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([])
             for face in object_faces:
                 init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][0].append([[]])
+                
+                ############################### Hagen ###################################
+                uv_layer = city_object.uv_layers[0].data
+                for loop_index in range(face.loop_start, face.loop_start + face.loop_total):
+                    print("Loop Index of Polygon: "+str(loop_index))
+                    init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[loop_index].uv))
+                ##########################################################################
+
+
                 for i in range(len(object_faces[face.index].vertices)):
                     original_index = object_faces[face.index].vertices[i]
                     get_vertex = object_verts[original_index]
@@ -336,6 +414,7 @@ class CityJSONExporter:
         print("\nExporting Blender scene into CityJSON file...")
         #Create the initial structure of the cityjson dictionary
         init_json = self.initialize_dictionary()
+        
         # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
         progress_max = len(bpy.data.objects)
         # Initialize progress status
@@ -344,6 +423,7 @@ class CityJSONExporter:
         cj_next_index = 0
         # Create a list of vertices to store the global vertices of all objects
         verts = list()
+
         for city_object in bpy.data.objects:
             #Get object's name
             objid = city_object.name
@@ -377,7 +457,27 @@ class CityJSONExporter:
         print ("Writing to CityJSON file...")
         #Writing CityJSON file
         with open(self.filepath, 'w', encoding='utf-8') as f:
+            basePathInfos = bpy.data.filepath.split('\\')
+            baseFolder = bpy.data.filepath.replace(basePathInfos[ len(basePathInfos) - 1 ],"")
+            
             json.dump(init_json, f, ensure_ascii=False)
+            for image in bpy.data.images:
+                if image.filepath:
+                    fileSourceInfos = image.filepath.split('\\')
+                    fileSourceName = fileSourceInfos[ len(fileSourceInfos) - 1 ]
+                    folderSource = image.filepath.replace(fileSourceInfos[ len(fileSourceInfos) - 1 ],"")
+                    
+                    fileInfosTarget =self.filepath.split('\\')
+                    folderTarget =self.filepath.replace(fileInfosTarget[ len(fileInfosTarget) - 1 ],"")
+                
+                    src_path = baseFolder + folderSource.replace("//","") + fileSourceName
+                    dst_path = folderTarget + r"appearance\\" + fileSourceName
+                    
+                    # create parent path for appearance
+                    path = os.path.join(folderTarget, 'appearance')
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    shutil.copy((r'%s' %src_path), (r'%s' %dst_path))
         
         end=time.time()
         timestamp = datetime.now()
