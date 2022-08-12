@@ -130,7 +130,8 @@ classes = (
     operator.UP3DATECityjsonfy,
     ui.UP3DATE_PT_gui,
     menu.SetSurfaceOperator,
-    menu.VIEW3D_MT_edit_mesh_context_submenu
+    menu.VIEW3D_MT_cityedit_mesh_context_menu,
+    menu.VIEW3D_MT_cityedit_mesh_context_submenu
 )
 
 def menu_func_export(self, context):
@@ -142,13 +143,12 @@ def menu_func_import(self, context):
     self.layout.operator(ImportCityJSON.bl_idname, text="CityJSON (.json)")
 
 def menu_func(self, context):
-    print("baue Menü")
     is_vert_mode, is_edge_mode, is_face_mode = context.tool_settings.mesh_select_mode
     if is_face_mode:
         layout = self.layout
         layout.separator()
         layout.label(text="CityJSON Options")
-        layout.menu(menu.VIEW3D_MT_edit_mesh_context_submenu.bl_idname, text="set SurfaceType")
+        layout.menu(menu.VIEW3D_MT_cityedit_mesh_context_submenu.bl_idname, text="set SurfaceType")
 
 def register():
     """Registers the classes and functions of the addon"""
@@ -158,18 +158,12 @@ def register():
     bpy.types.Scene.cityjsonfy_properties = bpy.props.PointerProperty(type=prop.UP3DATE_CityjsonfyProperties)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+    #add context menu to top menu "Face"
+    bpy.types.VIEW3D_MT_edit_mesh_faces.append(menu_func)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(menu_func)
     
-    #rcmenu = getattr(bpy.types, "VIEW3D_MT_edit_mesh_context_menu", None)
-    #print(rcmenu)
-    bpy.utils.register_class(menu.VIEW3D_MT_edit_mesh_context_menu)
-    rcmenu = menu.VIEW3D_MT_edit_mesh_context_menu
-    draw_funcs = rcmenu._dyn_ui_initialize()
-    print(draw_funcs)
-    draw_funcs.append(menu_func)
-
 def unregister():
     """Unregisters the classes and functions of the addon"""
-
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
@@ -180,17 +174,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-
-bpy.types.VIEW3D_MT_view.append(menu_func)
-
-####
-# Register menu only if it doesn't already exist.
-#    print("mainInit")
-#    rcmenu = getattr(bpy.types, "menu.VIEW3D_MT_edit_mesh_context_menu", None)
-#    if rcmenu is None:
-#        bpy.utils.register_class(menu.VIEW3D_MT_edit_mesh_context_menu)
-#        rcmenu = menu.VIEW3D_MT_edit_mesh_context_menu
-
-    # Retrieve a python list for inserting draw functions.
-#    draw_funcs = rcmenu._dyn_ui_initialize()
-#    draw_funcs.append(menu_func)

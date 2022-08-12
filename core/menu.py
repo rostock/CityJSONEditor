@@ -1,9 +1,9 @@
 import bpy
 
-class VIEW3D_MT_edit_mesh_context_submenu(bpy.types.Menu):
+class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
     bl_label = 'SurfaceTypes'
-    bl_idname = 'VIEW3D_MT_edit_mesh_context_submenu'
-    print("VIEW3D_MT_edit_mesh_context_submenu")
+    bl_idname = 'VIEW3D_MT_cityedit_mesh_context_submenu'
+    print("VIEW3D_MT_cityedit_mesh_context_submenu")
     def draw(self, context):
         layout = self.layout
         layout.label(text="Building")
@@ -12,9 +12,9 @@ class VIEW3D_MT_edit_mesh_context_submenu(bpy.types.Menu):
         layout.operator(SetSurfaceOperator.bl_idname, text="WallSurface").surfaceType = 'WallSurface'
         layout.operator(SetSurfaceOperator.bl_idname, text="RoofSurface").surfaceType = 'RoofSurface'
 
-class VIEW3D_MT_edit_mesh_context_menu(bpy.types.Menu):
+class VIEW3D_MT_cityedit_mesh_context_menu(bpy.types.Menu):
     bl_label = ''
-    print("VIEW3D_MT_edit_mesh_context_menu")
+    print("VIEW3D_MT_cityedit_mesh_context_menu")
     # Leave empty for compatibility.
     def draw(self, context):
         pass
