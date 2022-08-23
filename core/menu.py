@@ -28,29 +28,20 @@ class SetSurfaceOperator(bpy.types.Operator):
         default = ''
     )
     def execute(self, context):
-        print(self.surfaceType)
+        #print(self.surfaceType) # muss als CityMaterial angegeben werden
         obj = bpy.context.object
-        print (obj.material)
         if obj.type == 'MESH':
             mesh = obj.data # Assumed that obj.type == 'MESH'
             obj.update_from_editmode() # Loads edit-mode data into object data
             selected_polygons = [p for p in mesh.polygons if p.select]
             for face in selected_polygons:
-
+                
                 mat = CityMaterial(name='WallRoof')
                 diffuseColor = (0,1,0,1)
                 mat.setColor(diffuseColor)
                 mat.addMaterialToObj(obj)
+                mat.addMaterialToFace(obj)
                 
-                obj.data.polygons[face.index].material_index = 0
-                print("Vorher:" + str(face.material_index))
-                face.material_index = 3
-                print("Nachher:" + str(face.material_index))
                 
-                #print (face.id)
-                #für jede Fläche sollen nun die entsprechenden Materialien und CustomProperties angelegt werden
-        print(" ")
-        print(" ")
-        print(" ")
-        print (obj.material)
+               
         return {'FINISHED'}

@@ -10,6 +10,7 @@ class CityMaterial:
 
     def __init__(self,name):
         self.material = self.createMaterial(name)
+        self.name = self.material.name #hier benötigen wir den richtigen Namen, also inklusive *.ooX
 
     def createMaterial(self, name):
         return bpy.data.materials.new(name=name)
@@ -23,11 +24,15 @@ class CityMaterial:
     def addMaterialToObj(self, obj):
         obj.data.materials.append(self.material)
 
-    def addMaterialToFace(self, face):
-        pass
+    def addMaterialToFace(self, obj):
+        obj.active_material_index = self.getIndex(obj)
+        bpy.ops.object.material_slot_assign()
+        
 
     def addTexture():
         pass
 
-    def getIndex(self):
-        print ("index:" + str(self.material.pass_index))
+    def getIndex(self, obj):
+        #print(self.name)
+        return obj.material_slots.find(self.name)
+            
