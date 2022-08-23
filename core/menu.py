@@ -36,11 +36,12 @@ class SetSurfaceOperator(bpy.types.Operator):
             selected_polygons = [p for p in mesh.polygons if p.select]
             for face in selected_polygons:
                 
-                mat = CityMaterial(name='WallRoof')
+                mat = CityMaterial(name=self.surfaceType)
                 diffuseColor = (0,1,0,1)
                 mat.setColor(diffuseColor)
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)
+                mat.addCustomPropertie('type', self.surfaceType)
                 
                 
                

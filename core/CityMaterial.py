@@ -15,8 +15,15 @@ class CityMaterial:
     def createMaterial(self, name):
         return bpy.data.materials.new(name=name)
     
-    def addCustomPropertie(customLabel, value, materialId):
-        pass
+    def addCustomPropertie(self, customLabel, value):
+        obj = self.material
+        if customLabel not in obj:
+            obj[customLabel] = value
+
+        # get or create the UI object for the property
+        ui = obj.id_properties_ui(customLabel)
+        ui.update(description = "scripted Property, do not change")
+        ui.update(default = value)
 
     def setColor(self, diffuseColor):
         self.material.diffuse_color = (diffuseColor)
@@ -29,10 +36,9 @@ class CityMaterial:
         bpy.ops.object.material_slot_assign()
         
 
-    def addTexture():
+    def setTexture():
         pass
 
     def getIndex(self, obj):
-        #print(self.name)
         return obj.material_slots.find(self.name)
             
