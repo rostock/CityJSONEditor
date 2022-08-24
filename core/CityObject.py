@@ -6,6 +6,7 @@ class CityObject:
         self.obj = obj
     
     def addCustomPropertie(self, customLabel, value):
+        #bpy.types.Object.foo = bpy.props.IntProperty(default=4)
         obj = self.obj
         #if customLabel not in obj:
         obj[customLabel] = value

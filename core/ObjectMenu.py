@@ -1,5 +1,6 @@
 import bpy
 from .CityObject import CityObject
+from .FeatureTypes import FeatureTypes
 
 class VIEW3D_MT_cityobject_lod_submenu(bpy.types.Menu):
     bl_label = 'LevelOfDetail'
@@ -27,10 +28,15 @@ class VIEW3D_MT_cityobject_construction_submenu(bpy.types.Menu):
     bl_label = 'Construction'
     bl_idname = 'construction'
     def draw(self, context):
+
         layout = self.layout
         layout.label(text="Construction")
-        # bei den folgenden Operatoren muss ein Weg gefunden werden 
-        layout.operator(SetConstructionOperator.bl_idname, text="Building").construction = "Building"
+
+        ft = FeatureTypes()
+        list = ft.getAllFeatures()
+        
+        for feature in list:
+            layout.operator(SetConstructionOperator.bl_idname, text=feature).construction = feature
 
 class VIEW3D_MT_cityobject_construction_menu(bpy.types.Menu):
     bl_label = ''
