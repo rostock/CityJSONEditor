@@ -4,7 +4,6 @@ from .CityMaterial import CityMaterial
 class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
     bl_label = 'SurfaceTypes'
     bl_idname = 'VIEW3D_MT_cityedit_mesh_context_submenu'
-    print("VIEW3D_MT_cityedit_mesh_context_submenu")
     def draw(self, context):
         layout = self.layout
         layout.label(text="Building")
@@ -15,7 +14,6 @@ class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
 
 class VIEW3D_MT_cityedit_mesh_context_menu(bpy.types.Menu):
     bl_label = ''
-    print("VIEW3D_MT_cityedit_mesh_context_menu")
     # Leave empty for compatibility.
     def draw(self, context):
         pass
@@ -35,14 +33,9 @@ class SetSurfaceOperator(bpy.types.Operator):
             obj.update_from_editmode() # Loads edit-mode data into object data
             selected_polygons = [p for p in mesh.polygons if p.select]
             for face in selected_polygons:
-                
                 mat = CityMaterial(name=self.surfaceType)
-                diffuseColor = (0,1,0,1)
-                mat.setColor(diffuseColor)
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)
                 mat.addCustomPropertie('type', self.surfaceType)
-                
-                
-               
+      
         return {'FINISHED'}

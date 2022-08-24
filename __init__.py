@@ -9,7 +9,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.objects import CityJSONParser, CityJSONExporter
-from .core import ui, prop, operator, menu
+from .core import ui, prop, operator, EditMenu, ObjectMenu
 
 bl_info = {
     "name": "Up3date",
@@ -129,9 +129,18 @@ classes = (
     prop.UP3DATE_CityjsonfyProperties,
     operator.UP3DATECityjsonfy,
     ui.UP3DATE_PT_gui,
-    menu.SetSurfaceOperator,
-    menu.VIEW3D_MT_cityedit_mesh_context_menu,
-    menu.VIEW3D_MT_cityedit_mesh_context_submenu
+    EditMenu.SetSurfaceOperator,
+    EditMenu.VIEW3D_MT_cityedit_mesh_context_menu,
+    EditMenu.VIEW3D_MT_cityedit_mesh_context_submenu,
+    ObjectMenu.SetLODOperator,
+    ObjectMenu.VIEW3D_MT_cityobject_lod_menu,
+    ObjectMenu.VIEW3D_MT_cityobject_lod_submenu,
+    ObjectMenu.SetTypeOperator,
+    ObjectMenu.VIEW3D_MT_cityobject_type_menu,
+    ObjectMenu.VIEW3D_MT_cityobject_type_submenu,
+    ObjectMenu.SetConstructionOperator,
+    ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
+    ObjectMenu.VIEW3D_MT_cityobject_construction_submenu
 )
 
 def menu_func_export(self, context):
@@ -142,13 +151,22 @@ def menu_func_import(self, context):
     """Defines the menu item for CityJSON export"""
     self.layout.operator(ImportCityJSON.bl_idname, text="CityJSON (.json)")
 
-def menu_func(self, context):
+#create submenu in edit modus
+def editmenu_func(self, context):
     is_vert_mode, is_edge_mode, is_face_mode = context.tool_settings.mesh_select_mode
     if is_face_mode:
         layout = self.layout
         layout.separator()
         layout.label(text="CityJSON Options")
-        layout.menu(menu.VIEW3D_MT_cityedit_mesh_context_submenu.bl_idname, text="set SurfaceType")
+        layout.menu(EditMenu.VIEW3D_MT_cityedit_mesh_context_submenu.bl_idname, text="set SurfaceType")
+
+def objectmenu_func(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.label(text="CityJSON Options")
+    layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
+    layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
+    layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set BuildingType")
 
 def register():
     """Registers the classes and functions of the addon"""
@@ -158,9 +176,13 @@ def register():
     bpy.types.Scene.cityjsonfy_properties = bpy.props.PointerProperty(type=prop.UP3DATE_CityjsonfyProperties)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
-    #add context menu to top menu "Face"
-    bpy.types.VIEW3D_MT_edit_mesh_faces.append(menu_func)
-    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(menu_func)
+    #add menu to edit mod
+    bpy.types.VIEW3D_MT_edit_mesh_faces.append(editmenu_func)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(editmenu_func)
+    #add menu to object mod
+    bpy.types.VIEW3D_MT_object.append(objectmenu_func)
+    bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
+
     
 def unregister():
     """Unregisters the classes and functions of the addon"""
