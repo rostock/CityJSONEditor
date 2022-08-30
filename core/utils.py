@@ -51,8 +51,6 @@ def remove_scene_objects():
     print("scene has been cleared!")
     print("#####")
 
-
-
 def clean_list(values):
     """Creates a list of non list in case lists nested in lists exist"""
 
@@ -233,13 +231,11 @@ def link_face_semantic_surface(init_json, city_object, index, CityObject_Id, sem
     if not city_object.data.materials:
         return None
     if city_object.data.materials[face.material_index] is None:
-        # init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0]append(None)  //Auskommentiert von Tim
         init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'].append(None)
         return None
 
     semantic_surface_name = city_object.data.materials[face.material_index].name
     semantic_surface_index = semantic_surface_lookup[semantic_surface_name]
-    #init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'][0].append(semantic_surface_index) //Auskommentiert von Tim
     init_json["CityObjects"][CityObject_Id]["geometry"][index]['semantics']['values'].append(semantic_surface_index)
 
     return None

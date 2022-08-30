@@ -107,6 +107,7 @@ class CityJSONParser:
         if (geom['type'] == 'MultiSurface'
                 or geom['type'] == 'CompositeSurface'):
             for face in geom['boundaries']:
+                
                 if face:
                     bound.append(tuple(face[0]))
         elif geom['type'] == 'Solid':
@@ -149,12 +150,14 @@ class CityJSONParser:
                 # set custom property "type"
                 new_material.addCustomProperty("type",surface['type'])
                 mats.append(new_material.material)  
-                
+
+        """     
         for material in bpy.data.materials:
             material_type = material.CityJSONType
             print(material_type)
             pass
-        #"""
+        """
+        
         ##### with optional texture #####
         """
         if 'semantics' in geom:
@@ -391,9 +394,7 @@ class CityJSONExporter:
         semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
         if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
             
-            ##### Texture Export ####
-            # UV layer of the city_object, only the layer with index = 0 is used (beacause in our data there is only one)
-            uv_layer = city_object.data.uv_layers[0].data        
+            ##### Texture Export ####  
             
             # Build Appearance 
             # list of all the materials with a texture
@@ -454,6 +455,8 @@ class CityJSONExporter:
                     ##### Texture Export ####
                     # If the face of the vertex loop has a texture --> get the texture mapping parameters
                     if face_material in materials_with_texture:
+                        # UV layer of the city_object, only the layer with index = 0 is used (beacause in our data there is only one)
+                        uv_layer = city_object.data.uv_layers[0].data   
                         # Store UV - Coordinates
                         init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[cj_next_index].uv))
                         # Store UV - Mapping (UV Coordinates to Faces)

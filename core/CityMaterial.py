@@ -19,17 +19,22 @@ class CityMaterial:
         obj = self.material
         if customLabel not in obj:
             obj[customLabel] = value
-            bpy.types.Material.CityJSONType = bpy.props.StringProperty(name=customLabel, default="blaba")
+            bpy.types.Material.type = bpy.props.StringProperty(name=customLabel, default="default value")
             # bpy.data.materials[1].CityJSONType = "huhu"
-            self.material.CityJSONType = value
+            self.material.type = value
 
     #def setColor(self, diffuseColor):
     #    self.material.diffuse_color = (diffuseColor)
     
-    # Repräsentationsfarbe des Materials setzten
+    # set color of the material
     def setColor(self,surface_type):
+        self.material.use_nodes = True
+        nodes = self.material.node_tree.nodes
+        node = nodes.new('ShaderNodeBsdfPrincipled')
+        #principled_BSDF = nodes.get('Principled BSDF')
         if surface_type in self.material_colors:
-            self.material.diffuse_color = self.material_colors[surface_type]
+            #print(self.material_colors[surface_type]) --> is the correct color
+            node.inputs['Base Color'].default_value = self.material_colors[surface_type]
         
     def addMaterialToObj(self, obj):
         obj.data.materials.append(self.material)
