@@ -19,7 +19,7 @@ class CityMaterial:
         obj = self.material
         if customLabel not in obj:
             obj[customLabel] = value
-
+        print(obj.customlabel)
         # get or create the UI object for the property
         ui = obj.id_properties_ui(customLabel)
         ui.update(description = "scripted Property, do not change")

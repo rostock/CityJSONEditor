@@ -9,7 +9,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.objects import CityJSONParser, CityJSONExporter
-from .core import ui, prop, operator, EditMenu, ObjectMenu
+from .core import ui, prop, operator, EditMenu, ObjectMenu, MaterialProps
 
 bl_info = {
     "name": "Up3date",
@@ -140,7 +140,8 @@ classes = (
     ObjectMenu.VIEW3D_MT_cityobject_type_submenu,
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
-    ObjectMenu.VIEW3D_MT_cityobject_construction_submenu
+    ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
+    MaterialProps
 )
 
 def menu_func_export(self, context):
@@ -182,6 +183,8 @@ def register():
     #add menu to object mod
     bpy.types.VIEW3D_MT_object.append(objectmenu_func)
     bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
+
+    #bpy.types.Material.my_settings = bpy.props.PointerProperty(type=MaterialProps)
 
     
 def unregister():

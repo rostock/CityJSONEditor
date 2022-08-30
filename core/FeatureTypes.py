@@ -87,4 +87,3 @@ class FeatureTypes:
     def getAllFeatures(self):
         print(list(self.featuretypes))
         return list(self.featuretypes)
-        pass
