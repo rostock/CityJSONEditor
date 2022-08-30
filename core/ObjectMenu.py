@@ -69,7 +69,7 @@ class SetLODOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        obj.addCustomPropertie('lod',self.lod)
+        obj.addCustomIntegerProperty('CBOlod',self.lod)
         return {'FINISHED'} 
 
 class SetTypeOperator(bpy.types.Operator):
@@ -82,7 +82,7 @@ class SetTypeOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        obj.addCustomPropertie('type',self.type)
+        obj.addCustomStringProperty('CBOtype',self.type)
         return {'FINISHED'} 
 
 class SetConstructionOperator(bpy.types.Operator):
@@ -95,5 +95,5 @@ class SetConstructionOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        obj.addCustomPropertie('construction',self.construction)
+        obj.addCustomStringProperty('CBOconstruction',self.construction)
         return {'FINISHED'} 

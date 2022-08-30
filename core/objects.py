@@ -147,7 +147,7 @@ class CityJSONParser:
                 # set color of material
                 new_material.setColor(surface['type'])
                 # set custom property "type"
-                new_material.addCustomProperty("type",surface['type'])
+                new_material.addCustomStringProperty("type",surface['type'])
                 mats.append(new_material.material)  
                 
         for material in bpy.data.materials:
