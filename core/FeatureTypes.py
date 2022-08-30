@@ -79,7 +79,6 @@ class FeatureTypes:
 
     def getAllElementsOfFeatureType(self, type):
         return self.featuretypes
-        pass
 
     def getAllLODs(self):
         pass
@@ -87,4 +86,4 @@ class FeatureTypes:
     def getAllFeatures(self):
         print(list(self.featuretypes))
         return list(self.featuretypes)
-        pass
+

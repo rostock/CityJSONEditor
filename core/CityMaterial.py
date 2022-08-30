@@ -23,11 +23,6 @@ class CityMaterial:
             # bpy.data.materials[1].CityJSONType = "huhu"
             self.material.CityJSONType = value
 
-        # get or create the UI object for the property
-        ui = obj.id_properties_ui(customLabel)
-        ui.update(description = "scripted Property, do not change")
-        ui.update(default = value)
-
     #def setColor(self, diffuseColor):
     #    self.material.diffuse_color = (diffuseColor)
     
@@ -78,7 +73,6 @@ class CityMaterial:
         self.node_tree.links.new(texture_node.outputs[0], principled_BSDF.inputs[0]) 
 
         
-        pass
 
     def uvMapping(self,uv_parameters):
         pass
