@@ -141,7 +141,7 @@ classes = (
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
     ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
-    MaterialProps
+    MaterialProps.MaterialProps
 )
 
 def menu_func_export(self, context):
@@ -174,7 +174,7 @@ def register():
     print("Function: register()")
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.cityjsonfy_properties = bpy.props.PointerProperty(type=prop.UP3DATE_CityjsonfyProperties)
+    #bpy.types.Scene.cityjsonfy_properties = bpy.props.PointerProperty(type=prop.UP3DATE_CityjsonfyProperties)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
     #add menu to edit mod
@@ -185,6 +185,8 @@ def register():
     bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
 
     #bpy.types.Material.my_settings = bpy.props.PointerProperty(type=MaterialProps)
+    #bpy.types.Object.my_settings = bpy.props.PointerProperty(type=MaterialProps)
+    #print(bpy.types.Object.my_settings)
 
     
 def unregister():

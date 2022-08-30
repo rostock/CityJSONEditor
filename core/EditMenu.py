@@ -8,19 +8,19 @@ class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         
-        #obj = context.selected_objects
+        obj = context.selected_objects
         #for o in obj:
         #    print(getattr(o,'name'))
         #    print(getattr(o,'construction'))
-        #try:
-        #    print(obj.construction)
+        try:
+            print(obj.footer)
         #    layout.label(text="Building")
         # bei den folgenden Operatoren muss ein Weg gefunden werden 
         #    layout.operator(SetSurfaceOperator.bl_idname, text="GroundSurface").surfaceType = 'GroundSurface'
         #    layout.operator(SetSurfaceOperator.bl_idname, text="WallSurface").surfaceType = 'WallSurface'
         #    layout.operator(SetSurfaceOperator.bl_idname, text="RoofSurface").surfaceType = 'RoofSurface'
-        #except:
-        #    print("An exception occurred")
+        except:
+            print("An exception occurred")
         #    layout.label(text="set construction type in object mode")
         layout.label(text="Building")
         # bei den folgenden Operatoren muss ein Weg gefunden werden 

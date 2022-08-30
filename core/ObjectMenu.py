@@ -84,6 +84,7 @@ class SetTypeOperator(bpy.types.Operator):
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
         obj.addCustomPropertie('type',self.type)
+        obj.listAllAttr()
         #obj.printAttr('type')
         return {'FINISHED'} 
 

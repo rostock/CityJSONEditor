@@ -6,8 +6,7 @@ class CityObject:
         self.obj = obj
     
     def addCustomPropertie(self, customLabel, value):
-        bpy.types.Object.foo = bpy.props.IntProperty(default=4)
-        print(bpy.types.Object.foo)
+        bpy.types.Object.footer = bpy.props.IntProperty(default=4)
         obj = self.obj
         #if customLabel not in obj:
         obj[customLabel] = value
@@ -20,3 +19,7 @@ class CityObject:
     
     def printAttr(self, name):
         print(getattr(self.obj,name))
+
+    def listAllAttr(self):
+        for name, prop in self.obj.rna_type.properties.items():
+            print("Name: {}, Value: {}, Type:{}".format(name, prop, type(prop)))
