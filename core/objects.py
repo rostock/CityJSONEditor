@@ -1,5 +1,6 @@
 """Module to manipulate objects in Blender regarding CityJSON"""
 
+from asyncio.windows_events import NULL
 import json
 from posixpath import basename
 import time
@@ -17,12 +18,13 @@ from datetime import datetime
 from .material import (BasicMaterialFactory, ReuseMaterialFactory,
                        CityObjectTypeMaterialFactory)
 from .utils import (assign_properties, clean_buffer, clean_list,
-                    coord_translate_axis_origin, coord_translate_by_offset,
+                    coord_translate_axis_origin, coord_translate_by_offset, remove_all_materials,
                     remove_scene_objects, get_geometry_name, create_empty_object,
                     create_mesh_object, get_collection, write_vertices_to_CityJSON,
                     remove_vertex_duplicates, export_transformation_parameters,
                     export_metadata, export_parent_child, export_attributes,
-                    store_semantic_surfaces, link_face_semantic_surface)
+                    store_semantic_surfaces, link_face_semantic_surface, common_setup)    
+from .CityMaterial import (CityMaterial)              
 
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
@@ -96,7 +98,7 @@ class CityJSONParser:
         # Updating vertices with new translated vertices
         self.vertices = translation[0]
 
-    def parse_geometry(self, theid, obj, geom, index):
+    def parse_geometry(self, theid, obj, geom, index, data, filepath):
         """Returns a mesh object for the provided geometry"""
         bound = []
 
@@ -121,8 +123,62 @@ class CityJSONParser:
 
         temp_vertices, temp_bound = clean_buffer(self.vertices, bound)
 
+        """
         mats, values = self.material_factory.get_materials(cityobject=obj,
                                                            geometry=geom)
+        """
+
+        # Array of all materials
+        mats = []
+        # Array of the material indices
+        values = []
+
+        #appearances = []
+        #textureValues = []
+
+        #""" 
+        ##### Material only #####
+
+        if 'semantics' in geom:
+            values = geom['semantics']['values']
+            for surface in geom['semantics']['surfaces']:
+                # create new material
+                new_material = CityMaterial(surface['type'])
+                # set color of material
+                new_material.setColor(surface['type'])
+                # set custom property "type"
+                new_material.addCustomProperty("type",surface['type'])
+                mats.append(new_material.material)  
+                
+        for material in bpy.data.materials:
+            material_type = material.CityJSONType
+            print(material_type)
+            pass
+        #"""
+        ##### with optional texture #####
+        """
+        if 'semantics' in geom:
+            values = geom['semantics']['values']
+            texture_index = 0
+            for surface in geom['semantics']['surfaces']:
+                # create new material
+                new_material = CityMaterial(surface['type'])
+
+                if 'texture' in geom:
+                    #set texture of material
+                    new_material.setTexture(data, texture_index, filepath)
+                    texture_index += 1
+                else:
+                    # set color of material
+                    new_material.setColor(surface['type'])
+                # set custom property "type"
+                new_material.addCustomProperty("type",surface['type'])
+                mats.append(new_material.material)  
+
+        """
+
+
+        ###############
 
         geom_obj = create_mesh_object(get_geometry_name(theid, geom, index),
                                       temp_vertices,
@@ -141,7 +197,10 @@ class CityJSONParser:
         """Execute the import process"""
 
         if self.clear_scene:
+            common_setup()
+            remove_all_materials()
             remove_scene_objects()
+            
             
         print("\nImporting CityJSON file...")
 
@@ -172,7 +231,8 @@ class CityJSONParser:
             cityobjs[objid] = cityobject
 
             for i, geom in enumerate(obj['geometry']):
-                geom_obj = self.parse_geometry(objid, obj, geom, i)
+                data = self.data
+                geom_obj = self.parse_geometry(objid, obj, geom, i, data, self.filepath)
                 geom_obj.parent = cityobject
                 new_objects.append(geom_obj)
 
@@ -300,8 +360,6 @@ class CityJSONExporter:
     def create_appearance_item(self, basename):
         imageType = "PNG"
         imageName = "appearance/" + basename
-        print("Basename: "+str(basename))
-        print(imageName)
         texture = {
             "type": imageType,
             "image": imageName,
@@ -318,8 +376,6 @@ class CityJSONExporter:
 
     def create_texture_vertex(self, uv):
         print (uv.to_tuple())
-        
-
         return uv.to_tuple()
     #########################
 
@@ -328,15 +384,32 @@ class CityJSONExporter:
         #Index in the geometry list that the new geometry needs to be stored.
         index = len(init_json["CityObjects"][CityObject_id]['geometry'])-1
 
+        # Index of the vertices for the uv coordinates in the future CityJSON file
+        uv_index = 0
+
         # Create semantic surfaces
         semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
         if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
             
             ##### Texture Export ####
+            # UV layer of the city_object, only the layer with index = 0 is used (beacause in our data there is only one)
+            uv_layer = city_object.data.uv_layers[0].data        
+            
             # Build Appearance 
+            # list of all the materials with a texture
+            materials_with_texture = []
+            # index of the materials
+            material_index = 0 
             for material_slot in city_object.material_slots:
-                image_basename = material_slot.material.node_tree.nodes[2].image.name
-                init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
+                # Only try to build an appearance if there actually is a texture used in this material
+                # which can be checked by the existence of more than 2 nodes
+                if (len(material_slot.material.node_tree.nodes))>2:
+                    image_basename = material_slot.material.node_tree.nodes[2].image.name
+                    init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
+                    # add index of the material with a texture to the list of such materials
+                    materials_with_texture.append(material_index)
+                # increase the material index
+                material_index += 1
             #########################
 
             # Browsing through faces and their vertices of every object.
@@ -346,14 +419,24 @@ class CityJSONExporter:
                 ##### Texture Export ####
                 # Building JSON-Sructure for UV-Mapping
                 init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"].append([[]])
-                # UV layer of the city_object, only the layer with index = 0 is used
-                uv_layer = city_object.data.uv_layers[0].data
+
                 # ID of the material of the currently processed face
                 face_material = face.material_index
-                # Appending the ID of the corresponding appearance as first parameter (mapping material/texture to face UV-Coordinates)
-                init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(face_material)
-                #########################
-            
+
+                # Write the index of the appearance in texture>unnamed>values
+                # Face has a texture
+                if face_material in materials_with_texture:
+                    
+                    # get the future index of the appearance (Texture) as it will be in the CityJSON file
+                    future_material_index = materials_with_texture.index(face_material)
+                    # Appending the ID of the corresponding appearance as first parameter (mapping material/texture to face UV-Coordinates)
+                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(future_material_index)
+
+                # Face does not have a texture
+                else:
+                    # if there is no texture for this face append null-value instead
+                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(None)
+
                 # Vertex Loop 
                 for i in range(len(object_faces[face.index].vertices)):
                     original_index = object_faces[face.index].vertices[i]
@@ -364,17 +447,23 @@ class CityJSONExporter:
                     #coordinate to be exported.
                     write_vertices_to_CityJSON(city_object,get_vertex.co,init_json)
                     vertices.append(get_vertex.co)
+                    
                     # Store Boundaries
                     init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][face.index][0].append(cj_next_index)
 
                     ##### Texture Export ####
-                    # Store UV - Coordinates
-                    init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[cj_next_index].uv))
-                    # Store UV - Mapping (UV Coordinates to Faces)
-                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(cj_next_index)
-                    #########################
-
+                    # If the face of the vertex loop has a texture --> get the texture mapping parameters
+                    if face_material in materials_with_texture:
+                        # Store UV - Coordinates
+                        init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[cj_next_index].uv))
+                        # Store UV - Mapping (UV Coordinates to Faces)
+                        init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(uv_index)
+                        # increase the uv_index, which represents the uv-point index in the appearance of the CityJSON
+                        uv_index += 1
+                #########################
+                    
                     cj_next_index += 1
+                
 
                 # In case the object has semantics they are accordingly stored as well
                 link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
@@ -386,14 +475,6 @@ class CityJSONExporter:
             for face in object_faces:
                 init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"][0].append([[]])
                 
-                ############################### Hagen ###################################
-                uv_layer = city_object.uv_layers[0].data
-                for loop_index in range(face.loop_start, face.loop_start + face.loop_total):
-                    print("Loop Index of Polygon: "+str(loop_index))
-                    init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[loop_index].uv))
-                ##########################################################################
-
-
                 for i in range(len(object_faces[face.index].vertices)):
                     original_index = object_faces[face.index].vertices[i]
                     get_vertex = object_verts[original_index]
@@ -414,6 +495,10 @@ class CityJSONExporter:
         print("\nExporting Blender scene into CityJSON file...")
         #Create the initial structure of the cityjson dictionary
         init_json = self.initialize_dictionary()
+
+        # switch to Object-Mode (does nothing if already in Object-Mode)
+        # requirement for some of the later functions to work properly
+        bpy.ops.object.mode_set(mode='OBJECT')
         
         # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
         progress_max = len(bpy.data.objects)

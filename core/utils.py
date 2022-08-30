@@ -8,13 +8,39 @@ import bpy, idprop
 
 
 ########## Importer functions ##########
+def common_setup():
+    print("establishing common setup...")
+    # switch to Object-Mode (does nothing if already in Object-Mode)
+    # requirement for some of the later functions to work properly
+    if bpy.data.objects[0].mode == 'EDIT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    else:
+        pass
+
+    # select the mesh object
+    if (len(bpy.context.selected_objects)) == 0:
+        bpy.ops.object.select_by_type(type = 'MESH')
+    print("common setup has been established!")
+    print("#####")
+
+def remove_all_materials():
+    print("removing materials...")
+    # unlink the materials from the object
+    bpy.data.objects[0].data.materials.clear()
+    # delete all materials from current blender instance
+    for material in bpy.data.materials:
+        if not material.users:
+            bpy.data.materials.remove(material)
+    print("all materials have been removed!")
+    print("#####")
 
 def remove_scene_objects():
     """Clears the scenes of any objects and removes world's custom properties 
     and collections"""
+    print("clearing scene...")
     # Delete world custom properties
     if bpy.context.scene.world.keys():
-        for custom_property in bpy.context.scene.world.keys():
+        for custom_property in list(bpy.context.scene.world.keys()):
             del bpy.context.scene.world[custom_property]
     # Deleting previous objects every time a new CityJSON file is imported
     bpy.ops.object.select_all(action='SELECT')
@@ -22,6 +48,9 @@ def remove_scene_objects():
     # Deleting previously existing collections
     for collection in bpy.data.collections:
         bpy.data.collections.remove(collection)
+    print("scene has been cleared!")
+    print("#####")
+
 
 
 def clean_list(values):

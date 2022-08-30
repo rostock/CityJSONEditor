@@ -34,6 +34,12 @@ class BasicMaterialFactory:
 
         mat.diffuse_color = self.get_surface_color(surface['type'])
 
+        #### Texture Test ###
+
+        #mat.node_tree.new
+
+        #####################
+
         return mat
 
     def get_material(self, surface):
