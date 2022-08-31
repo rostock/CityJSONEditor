@@ -10,7 +10,6 @@ class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
         print("building edit menu")
         layout = self.layout
         obj = context.selected_objects            
-        
         try:
             constructionType = getattr(obj[0], "CBOconstruction")
             features = FeatureTypes()
@@ -35,7 +34,6 @@ class SetSurfaceOperator(bpy.types.Operator):
     )
     def execute(self, context):
         obj = context.object
-        print("Klick:" + obj.CBOconstruction)
         if obj.type == 'MESH':
             mesh = obj.data # Assumed that obj.type == 'MESH'
             obj.update_from_editmode() # Loads edit-mode data into object data
