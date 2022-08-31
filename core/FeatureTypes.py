@@ -159,4 +159,7 @@ class FeatureTypes:
     def hexToRGB(self, value):
         value = value.replace("#","")
         rgb = tuple(int(value[i:i+2], 16) for i in (0, 2, 4))
+        rgb[0] = rgb[0]/255
+        rgb[1] = rgb[1]/255
+        rgb[2] = rgb[2]/255
         return rgb
