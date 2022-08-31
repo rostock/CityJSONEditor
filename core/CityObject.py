@@ -5,26 +5,17 @@ class CityObject:
     def __init__(self,obj):
         self.obj = obj
     
-    def addCustomPropertie(self, customLabel, value):
+    def addCustomStringProperty(self, customLabel, value):
+        if not hasattr(self.obj, customLabel):
+            setattr(bpy.types.Object, customLabel, bpy.props.StringProperty(name=customLabel, default="blabla"))
+        setattr(self.obj, customLabel, value)
+        
+    def addCustomIntegerProperty(self, customLabel, value):
+        if not hasattr(self.obj, customLabel):
+            setattr(bpy.types.Object, customLabel, bpy.props.IntProperty(name=customLabel, default=2))
+        setattr(self.obj, customLabel, value)
 
-        #bpy.types.Object.foo = bpy.props.IntProperty(default=4)
-        obj = self.obj
-        #if customLabel not in obj:
-        obj[customLabel] = value
-
-        bpy.types.Object.footer = bpy.props.IntProperty(default=4)
-        obj = self.obj
-        #if customLabel not in obj:
-        obj[customLabel] = value
-        #print(obj[customLabel])
-
-        # get or create the UI object for the property
-        ui = obj.id_properties_ui(customLabel)
-        ui.update(description = "scripted Property, do not change")
-        ui.update(default = value)
-    
     def printAttr(self, name):
-        print(getattr(self.obj,name))
         print(getattr(self.obj,name))
 
     def listAllAttr(self):

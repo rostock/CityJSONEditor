@@ -1,84 +1,149 @@
 class FeatureTypes:
     featuretypes = {
-        "building":[
-            "Building",
-            "BuildingPart",
-            "BuildingInstallation",
-            "IntBuildingInstallation",
-            "RoofSurface",
-            "WallSurface",
-            "GroundSurface",
-            "ClosureSurface",
-            "FloorSurface",
-            "OuterFloorSurface",
-            "CeilingSurface",
-            "OuterCeilingSurface",
-            "Door",
-            "Window",
-            "Room",
-            "BuildingFurniture",
-        ],
-        "bridge":[
-            "Bridge",
-            "BridgePart",
-            "BridgeInstallation",
-            "IntBridgeInstallation",
-            "BridgeConstructionElement",
-            "RoofSurface",
-            "WallSurface",
-            "GroundSurface",
-            "ClosureSurface",
-            "FloorSurface",
-            "OuterFloorSurface",
-            "InteriorWallSurface",
-            "CeilingSurface",
-            "OuterCeilingSurface",
-            "Door",
-            "Window",
-            "BridgeRoom",
-            "BridgeFurniture"
-        ]
+        "building": {
+            "Building": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "BuildingPart": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "BuildingInstallation": {
+                "lod": [1,2,3,4,5],
+                "color": "#ae825a"
+            },
+            "IntBuildingInstallation": {
+                "lod": [1,2,3,4,5],
+                "color": "#ae825a"
+            },
+            "RoofSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#9c4444"
+            },
+            "WallSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#dbdbdb"
+            },
+            "GroundSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#747474"
+            },
+            "ClosureSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "FloorSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "OuterFloorSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#854c7b"
+            },
+            "CeilingSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "OuterCeilingSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#7e7d54"
+            },
+            "Door": {
+                "lod": [4,5],
+                "color": "#4d4de8"
+            },
+            "Window": {
+                "lod": [4,5],
+                "color": "#80c7c8"
+            },
+            "Room": {
+                "lod": [5],
+                "color": "#ffffff"
+            },
+            "BuildingFurniture": {
+                "lod": [5],
+                "color": "#ffffff"
+            },
+        },
+        "bridge":{
+            "Bridge": {
+                "lod": [1,2,3,4,5],
+                "color": "#a77600"
+            },
+            "BridgePart": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "BridgeInstallation": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "IntBridgeInstallation": {
+                "lod": [1,2,3,4,5],
+                "color": "#7e7d54"
+            },
+            "BridgeConstructionElement": {
+                "lod": [1,2,3,4,5],
+                "color": "#7737ae"
+            },
+            "RoofSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "WallSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "GroundSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "ClosureSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "FloorSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "OuterFloorSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "InteriorWallSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "CeilingSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "OuterCeilingSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "Door": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "Window": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "BridgeRoom": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "BridgeFurniture": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            }
+        }
     }
 
-#<classColor className="bldg:Building" color="#e0e0e0ff"/>
-#      <classColor className="bldg:BuildingPart" color="#ffffffff"/>
-#      <classColor className="bldg:BuildingInstallation" color="#ae825aff"/>
-#      <classColor className="bldg:IntBuildingInstallation" color="#ae825aff"/>
-#      <classColor className="bldg:RoofSurface" color="#9c4444ff"/>
-#      <classColor className="bldg:WallSurface" color="#dbdbdbff"/>
-#      <classColor className="bldg:GroundSurface" color="#747474ff"/>
-#      <classColor className="bldg:ClosureSurface" color="#ffffffff"/>
-#      <classColor className="bldg:FloorSurface" color="#ffffffff"/>
-#      <classColor className="bldg:OuterFloorSurface" color="#854c7bff"/>
-#      <classColor className="bldg:InteriorWallSurface" color="#ffffffff"/>
-#      <classColor className="bldg:CeilingSurface" color="#ffffffff"/>
-#      <classColor className="bldg:OuterCeilingSurface" color="#7e7d54ff"/>
-#      <classColor className="bldg:Door" color="#4d4de8ff"/>
-#      <classColor className="bldg:Window" color="#80c7c8ff"/>
-#      <classColor className="bldg:Room" color="#ffffffff"/>
-#      <classColor className="bldg:BuildingFurniture" color="#ffffffff"/>
-#      <classColor className="brid:Bridge" color="#a77600ff"/>
-#      <classColor className="brid:BridgePart" color="#ffffffff"/>
-#      <classColor className="brid:BridgeInstallation" color="#3753aeff"/>
-#      <classColor className="brid:IntBridgeInstallation" color="#ffffffff"/>
-#      <classColor className="brid:BridgeConstructionElement" color="#7737aeff"/>
-#      <classColor className="brid:RoofSurface" color="#ffffffff"/>
-#      <classColor className="brid:WallSurface" color="#ffffffff"/>
-#      <classColor className="brid:GroundSurface" color="#ffffffff"/>
-#      <classColor className="brid:ClosureSurface" color="#ffffffff"/>
-#      <classColor className="brid:FloorSurface" color="#ffffffff"/>
-#      <classColor className="brid:OuterFloorSurface" color="#ffffffff"/>
-#      <classColor className="brid:InteriorWallSurface" color="#ffffffff"/>
-#      <classColor className="brid:CeilingSurface" color="#ffffffff"/>
-#      <classColor className="brid:OuterCeilingSurface" color="#ffffffff"/>
-#      <classColor className="brid:Door" color="#ffffffff"/>
-#      <classColor className="brid:Window" color="#ffffffff"/>
-#      <classColor className="brid:BridgeRoom" color="#ffffffff"/>
-#      <classColor className="brid:BridgeFurniture" color="#ffffffff"/>
-
-
     def getAllElementsOfFeatureType(self, type):
-        return self.featuretypes
+        return self.featuretypes[type]
 
     def getAllLODs(self):
         pass
@@ -86,4 +151,15 @@ class FeatureTypes:
     def getAllFeatures(self):
         print(list(self.featuretypes))
         return list(self.featuretypes)
-
+    
+    def getRGBColor(self, construction, surface):
+        rgb = self.hexToRGB(self.featuretypes[construction][surface]["color"])
+        return rgb
+    
+    def hexToRGB(self, value):
+        value = value.replace("#","")
+        rgb = tuple(int(value[i:i+2], 16) for i in (0, 2, 4))
+        rgb[0] = rgb[0]/255
+        rgb[1] = rgb[1]/255
+        rgb[2] = rgb[2]/255
+        return rgb

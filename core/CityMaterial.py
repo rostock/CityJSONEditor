@@ -2,12 +2,6 @@ import bpy
 
 class CityMaterial:
 
-    material_colors = {
-        "WallSurface": (0.8, 0.8, 0.8, 1),
-        "RoofSurface": (0.9, 0.057, 0.086, 1),
-        "GroundSurface": (0.507, 0.233, 0.036, 1)
-    }
-
     def __init__(self,name):
         self.material = self.createMaterial(name)
         self.name = self.material.name #hier benötigen wir den richtigen Namen, also inklusive *.ooX
@@ -15,6 +9,7 @@ class CityMaterial:
     def createMaterial(self, name):
         return bpy.data.materials.new(name=name)
     
+    """
     def addCustomProperty(self, customLabel, value):
         obj = self.material
         if customLabel not in obj:
@@ -22,10 +17,18 @@ class CityMaterial:
             bpy.types.Material.type = bpy.props.StringProperty(name=customLabel, default="default value")
             # bpy.data.materials[1].CityJSONType = "huhu"
             self.material.type = value
-
-    #def setColor(self, diffuseColor):
-    #    self.material.diffuse_color = (diffuseColor)
     
+    """
+    def addCustomStringProperty(self, customLabel, value):
+        if not hasattr(self.material, customLabel):
+            setattr(bpy.types.Material, customLabel, bpy.props.StringProperty(name=customLabel, default="blabla"))
+        setattr(self.material, customLabel, value)
+            
+
+    def setColor(self, rgb):
+        self.material.diffuse_color = (rgb[0], rgb[1], rgb[2], 1)
+    
+    """
     # set color of the material
     def setColor(self,surface_type):
         # switch material to use nodes
@@ -37,6 +40,7 @@ class CityMaterial:
         # if the surface type is in the list --> set material color accordingly
         if surface_type in self.material_colors:
             principled_BSDF.inputs['Base Color'].default_value = self.material_colors[surface_type]
+    """
         
 
     def addMaterialToObj(self, obj):

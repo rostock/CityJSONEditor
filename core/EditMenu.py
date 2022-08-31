@@ -1,4 +1,5 @@
 import bpy
+from .FeatureTypes import FeatureTypes
 from .CityMaterial import CityMaterial
 
 class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
@@ -6,29 +7,19 @@ class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
     bl_idname = 'VIEW3D_MT_cityedit_mesh_context_submenu'
     
     def draw(self, context):
+        print("building edit menu")
         layout = self.layout
+        obj = context.selected_objects            
         
-        obj = context.selected_objects
-        #for o in obj:
-        #    print(getattr(o,'name'))
-        #    print(getattr(o,'construction'))
         try:
-            print(obj.footer)
-        #    layout.label(text="Building")
-        # bei den folgenden Operatoren muss ein Weg gefunden werden 
-        #    layout.operator(SetSurfaceOperator.bl_idname, text="GroundSurface").surfaceType = 'GroundSurface'
-        #    layout.operator(SetSurfaceOperator.bl_idname, text="WallSurface").surfaceType = 'WallSurface'
-        #    layout.operator(SetSurfaceOperator.bl_idname, text="RoofSurface").surfaceType = 'RoofSurface'
+            constructionType = getattr(obj[0], "CBOconstruction")
+            features = FeatureTypes()
+            layout.label(text=constructionType)  
+            for surface in features.getAllElementsOfFeatureType(constructionType):
+                layout.operator(SetSurfaceOperator.bl_idname, text=surface).surfaceType = surface
         except:
-            print("An exception occurred")
-        #    layout.label(text="set construction type in object mode")
-        layout.label(text="Building")
-        # bei den folgenden Operatoren muss ein Weg gefunden werden 
-        layout.operator(SetSurfaceOperator.bl_idname, text="GroundSurface").surfaceType = 'GroundSurface'
-        layout.operator(SetSurfaceOperator.bl_idname, text="WallSurface").surfaceType = 'WallSurface'
-        layout.operator(SetSurfaceOperator.bl_idname, text="RoofSurface").surfaceType = 'RoofSurface'
+            layout.label(text="set construction type in object mode or select object in object mode")  
         
-
 class VIEW3D_MT_cityedit_mesh_context_menu(bpy.types.Menu):
     bl_label = ''
     # Leave empty for compatibility.
@@ -43,8 +34,8 @@ class SetSurfaceOperator(bpy.types.Operator):
         default = ''
     )
     def execute(self, context):
-        #print(self.surfaceType) # muss als CityMaterial angegeben werden
-        obj = bpy.context.object
+        obj = context.object
+        print("Klick:" + obj.CBOconstruction)
         if obj.type == 'MESH':
             mesh = obj.data # Assumed that obj.type == 'MESH'
             obj.update_from_editmode() # Loads edit-mode data into object data
@@ -53,6 +44,9 @@ class SetSurfaceOperator(bpy.types.Operator):
                 mat = CityMaterial(name=self.surfaceType)
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)
-                mat.addCustomPropertie('type', self.surfaceType)
+                mat.addCustomStringProperty('CBMtype', self.surfaceType)
+                ft = FeatureTypes()
+                color = ft.getRGBColor(obj.CBOconstruction, self.surfaceType)
+                mat.setColor(color)
       
         return {'FINISHED'}
