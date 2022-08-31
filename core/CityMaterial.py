@@ -28,14 +28,17 @@ class CityMaterial:
     
     # set color of the material
     def setColor(self,surface_type):
+        # switch material to use nodes
         self.material.use_nodes = True
-        nodes = self.material.node_tree.nodes
-        node = nodes.new('ShaderNodeBsdfPrincipled')
-        #principled_BSDF = nodes.get('Principled BSDF')
+
+        # get node which has the color setting
+        principled_BSDF = self.material.node_tree.nodes.get('Principled BSDF')
+
+        # if the surface type is in the list --> set material color accordingly
         if surface_type in self.material_colors:
-            #print(self.material_colors[surface_type]) --> is the correct color
-            node.inputs['Base Color'].default_value = self.material_colors[surface_type]
+            principled_BSDF.inputs['Base Color'].default_value = self.material_colors[surface_type]
         
+
     def addMaterialToObj(self, obj):
         obj.data.materials.append(self.material)
 
