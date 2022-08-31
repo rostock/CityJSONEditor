@@ -16,7 +16,7 @@ class CityMaterial:
             
 
     def setColor(self, rgb):
-        self.material.diffuse_color = (rgb[0]/100, rgb[1]/100, rgb[2]/100, 1)
+        self.material.diffuse_color = (rgb[0]/255, rgb[1]/255, rgb[2]/255, 1)
     
     # Repräsentationsfarbe des Materials setzten
     #def setColor(self,surface_type):

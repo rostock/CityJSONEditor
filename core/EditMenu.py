@@ -47,8 +47,6 @@ class SetSurfaceOperator(bpy.types.Operator):
                 mat.addCustomStringProperty('CBMtype', self.surfaceType)
                 ft = FeatureTypes()
                 color = ft.getRGBColor(obj.CBOconstruction, self.surfaceType)
-                print (color)
-                #mat.setColor(color)
-                #mat.addDefinedColo
+                mat.setColor(color)
       
         return {'FINISHED'}
