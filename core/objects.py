@@ -24,7 +24,8 @@ from .utils import (assign_properties, clean_buffer, clean_list,
                     remove_vertex_duplicates, export_transformation_parameters,
                     export_metadata, export_parent_child, export_attributes,
                     store_semantic_surfaces, link_face_semantic_surface, common_setup)    
-from .CityMaterial import (CityMaterial)              
+from .CityMaterial import (CityMaterial)          
+from .FeatureTypes import (FeatureTypes)  
 
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
@@ -124,11 +125,6 @@ class CityJSONParser:
 
         temp_vertices, temp_bound = clean_buffer(self.vertices, bound)
 
-        """
-        mats, values = self.material_factory.get_materials(cityobject=obj,
-                                                           geometry=geom)
-        """
-
         # Array of all materials
         mats = []
         # Array of the material indices
@@ -145,18 +141,21 @@ class CityJSONParser:
             for surface in geom['semantics']['surfaces']:
                 # create new material
                 new_material = CityMaterial(surface['type'])
-                # set color of material
-                new_material.setColor(surface['type'])
-                # set custom property "type"
-                new_material.addCustomStringProperty("type",surface['type'])
-                mats.append(new_material.material)  
 
-        """     
-        for material in bpy.data.materials:
-            material_type = material.CityJSONType
-            print(material_type)
-            pass
-        """
+                # set color of material
+                ft = FeatureTypes()
+                color = ft.getRGBColor(obj['type'], surface['type'])
+                new_material.setColor(color)
+
+
+                # set color of material
+                #ew_material.setColor(surface['type'])
+
+
+                # set custom property "type"
+                new_material.addCustomStringProperty("CBMtype",surface['type'])
+                mats.append(new_material.material)  
+        #"""     
         
         ##### with optional texture #####
         """
@@ -499,9 +498,7 @@ class CityJSONExporter:
         #Create the initial structure of the cityjson dictionary
         init_json = self.initialize_dictionary()
 
-        # switch to Object-Mode (does nothing if already in Object-Mode)
-        # requirement for some of the later functions to work properly
-        bpy.ops.object.mode_set(mode='OBJECT')
+        common_setup()
         
         # Variables to keep up with the exporting progress. Used to print percentage in the terminal.
         progress_max = len(bpy.data.objects)

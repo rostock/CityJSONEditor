@@ -25,22 +25,17 @@ class CityMaterial:
         setattr(self.material, customLabel, value)
             
 
-    def setColor(self, rgb):
-        self.material.diffuse_color = (rgb[0], rgb[1], rgb[2], 1)
+    #def setColor(self, rgb):
+    #    self.material.diffuse_color = (rgb[0], rgb[1], rgb[2], 1)
     
-    """
     # set color of the material
-    def setColor(self,surface_type):
+    def setColor(self,rgb):
         # switch material to use nodes
         self.material.use_nodes = True
 
         # get node which has the color setting
         principled_BSDF = self.material.node_tree.nodes.get('Principled BSDF')
-
-        # if the surface type is in the list --> set material color accordingly
-        if surface_type in self.material_colors:
-            principled_BSDF.inputs['Base Color'].default_value = self.material_colors[surface_type]
-    """
+        principled_BSDF.inputs['Base Color'].default_value = (rgb[0], rgb[1], rgb[2], 1)
         
 
     def addMaterialToObj(self, obj):

@@ -216,7 +216,7 @@ def store_semantic_surfaces(init_json, city_object, index, CityObject_Id):
         if material is None:
             continue
 
-        semantics['surfaces'].append({'type': material['type']})
+        semantics['surfaces'].append({'type': material['CBMtype']})
         semantic_surface_lookup[material.name] = semantic_surface_index
         semantic_surface_index += 1
 
