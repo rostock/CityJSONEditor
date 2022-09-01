@@ -153,7 +153,7 @@ class CityJSONParser:
 
 
                 # set custom property "type"
-                new_material.addCustomStringProperty("CBMtype",surface['type'])
+                new_material.addCustomStringProperty("CJEMtype",surface['type'])
                 mats.append(new_material.material)  
         #"""     
         
