@@ -1,6 +1,6 @@
 class FeatureTypes:
     featuretypes = {
-        "building": {
+        "Building": {
             "Building": {
                 "lod": [1,2,3,4,5],
                 "color": "#ffffff"
@@ -66,7 +66,7 @@ class FeatureTypes:
                 "color": "#ffffff"
             },
         },
-        "bridge":{
+        "Bridge":{
             "Bridge": {
                 "lod": [1,2,3,4,5],
                 "color": "#a77600"
@@ -159,7 +159,9 @@ class FeatureTypes:
     def hexToRGB(self, value):
         value = value.replace("#","")
         rgb = tuple(int(value[i:i+2], 16) for i in (0, 2, 4))
-        rgb[0] = rgb[0]/255
-        rgb[1] = rgb[1]/255
-        rgb[2] = rgb[2]/255
+        rgb_list = list(rgb)
+        rgb_list[0] = rgb[0]/255
+        rgb_list[1] = rgb[1]/255
+        rgb_list[2] = rgb[2]/255
+        rgb = tuple(rgb_list)
         return rgb
