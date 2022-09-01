@@ -25,11 +25,10 @@ def common_setup():
 
 def remove_all_materials():
     print("removing materials...")
-    # unlink the materials from the object
-    bpy.data.objects[0].data.materials.clear()
+    # unlink the materials from the object (not required because the object is removes anyway)
+    # bpy.data.objects[0].data.materials.clear()
     # delete all materials from current blender instance
     for material in bpy.data.materials:
-        if not material.users:
             bpy.data.materials.remove(material)
     print("all materials have been removed!")
     print("#####")
@@ -216,7 +215,7 @@ def store_semantic_surfaces(init_json, city_object, index, CityObject_Id):
         if material is None:
             continue
 
-        semantics['surfaces'].append({'type': material['CBMtype']})
+        semantics['surfaces'].append({'type': material['CJEMtype']})
         semantic_surface_lookup[material.name] = semantic_surface_index
         semantic_surface_index += 1
 
