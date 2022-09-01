@@ -12,12 +12,12 @@ from .core.objects import CityJSONParser, CityJSONExporter
 from .core import ui, prop, operator, EditMenu, ObjectMenu, MaterialProps
 
 bl_info = {
-    "name": "Up3date",
-    "author": "Konstantinos Mastorakis",
-    "version": (1, 0),
-    "blender": (2, 80, 0),
+    "name": "CityJSONEditor",
+    "author": "Konstantinos Mastorakis, Tim Balschmiter, Hagen Schoenkaese",
+    "version": (0, 9, 0),
+    "blender": (3, 2, 2),
     "location": "File > Import > CityJSON (.json) || File > Export > CityJSON (.json)",
-    "description": "Visualize, edit and export 3D City Models encoded in CityJSON format",
+    "description": "Visualize, edit and export 3D structures encoded in CityJSON format",
     "warning": "",
     "wiki_url": "",
     "category": "Import-Export",
