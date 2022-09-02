@@ -45,7 +45,6 @@ class SetSurfaceOperator(bpy.types.Operator):
                 matOld = CityMaterial(name=None, matIndex=face.material_index, obj=obj)
                 matOld.deleteMaterial(obj=obj, matIndex=face.material_index)
                 del matOld
-
                 mat = CityMaterial(name=self.surfaceType, matIndex=NULL, obj=NULL)                
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)

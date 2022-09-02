@@ -182,6 +182,7 @@ def register():
     #add menu to object mod
     bpy.types.VIEW3D_MT_object.append(objectmenu_func)
     bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
+    bpy.types.PreferencesView.show_developer_ui = True
     
 def unregister():
     """Unregisters the classes and functions of the addon"""

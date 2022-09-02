@@ -42,7 +42,6 @@ class CityMaterial:
         bpy.ops.object.material_slot_assign()      
 
     def setTexture(self, data, texture_index, filepath):
-
         # setup image
 
         # path of the imported file (json)
@@ -72,7 +71,7 @@ class CityMaterial:
 
         texture_node = self.node_tree.nodes.new('ShaderNodeTexImage')
         texture_node.image = image
-
+        
         self.node_tree.links.new(texture_node.outputs[0], principled_BSDF.inputs[0]) 
 
         
