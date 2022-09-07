@@ -75,10 +75,6 @@ class CityMaterial:
         texture_node.image = image
         self.material.node_tree.links.new(texture_node.outputs[0], principled_BSDF.inputs[0])
         print("image texture: "+str(image_path_raw)+" was used!")
-        
-
-    def uvMapping(self,uv_parameters):
-        pass
 
     def getIndex(self, obj):
         return obj.material_slots.find(self.name)

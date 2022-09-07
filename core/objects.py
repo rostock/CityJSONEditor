@@ -23,9 +23,10 @@ from .utils import (assign_properties, clean_buffer, clean_list,
                     create_mesh_object, get_collection, write_vertices_to_CityJSON,
                     remove_vertex_duplicates, export_transformation_parameters,
                     export_metadata, export_parent_child, export_attributes,
-                    store_semantic_surfaces, link_face_semantic_surface, common_setup)    
+                    store_semantic_surfaces, link_face_semantic_surface, common_setup, uvMapping)    
 from .CityMaterial import (CityMaterial)          
-from .FeatureTypes import (FeatureTypes)  
+from .FeatureTypes import (FeatureTypes)
+import bmesh
 
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
@@ -204,6 +205,9 @@ class CityJSONParser:
                                       temp_bound,
                                       mats,
                                       values)
+
+        # UV Mapping
+        uvMapping(geom_obj,geom)
 
         if 'lod' in geom:
             geom_obj['lod'] = geom['lod']

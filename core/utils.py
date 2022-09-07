@@ -4,7 +4,8 @@ This modules provides utitily methods for the importing/exporting
 processing of CityJSON files
 """
 
-import bpy, idprop
+from tokenize import String
+import bpy, idprop, bmesh
 
 
 ########## Importer functions ##########
@@ -188,7 +189,27 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 
     new_object = bpy.data.objects.new(name, mesh_data)
 
+
     return new_object
+
+def uvMapping(object, geom):
+    uv_coords = geom['appearances']['vertex-texture']
+    mesh_data = object.data
+    uv_layer = mesh_data.uv_layers.new()
+    mesh_data.uv_layers.active = uv_layer
+
+    for face in geom['texture']['unnamed']['values']:
+        if geom['texture']['unnamed']['values'][face] != [[None]]:
+            poly = mesh_data.polygons[face]
+            for vert_idx, loop_idx in zip(poly.vertices, poly.loop_indices):
+                uv_layer.data[loop_idx].uv = (0,0)
+            pass
+        else:
+            pass
+
+    #for face in mesh_data.polygons:
+    #    for vert_idx, loop_idx in zip(face.vertices, face.loop_indices):
+    #        uv_layer.data[loop_idx].uv = (, )
 
 
 def get_collection(collection_name):
