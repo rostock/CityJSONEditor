@@ -9,7 +9,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.objects import CityJSONParser, CityJSONExporter
-from .core import ui, prop, operator, EditMenu, ObjectMenu
+from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject
 
 bl_info = {
     "name": "CityJSONEditor",
@@ -123,6 +123,19 @@ class ExportCityJSON(Operator, ExportHelper):
                                     precision=self.precision)
         return exporter.execute()
 
+class SetAttributes(bpy.types.Operator):
+    bl_idname = "wm.set_attributes"
+    bl_label = "SetAttributes"
+
+    def execute(self, context):
+        for obj in context.selected_objects: 
+            dir(obj)
+            # obj attributes vergleichen mit CityObjectProps
+            #for attr in dir(CityObject.CityObjectProps):
+            #    if not hasattr(obj, attr):
+            #        print('selected Object has no' + attr)
+        return {'FINISHED'} 
+
 classes = (
     ImportCityJSON,
     ExportCityJSON,
@@ -140,7 +153,8 @@ classes = (
     ObjectMenu.VIEW3D_MT_cityobject_type_submenu,
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
-    ObjectMenu.VIEW3D_MT_cityobject_construction_submenu
+    ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
+    SetAttributes 
 )
 
 def menu_func_export(self, context):
@@ -164,9 +178,12 @@ def objectmenu_func(self, context):
     layout = self.layout
     layout.separator()
     layout.label(text="CityJSON Options")
+    #hier muss noch eine IF-Anweisung, dass die Funktion nur angezeigt wird, wenn ein verpflichtendes Attribut fehlt
+    layout.operator(SetAttributes.bl_idname, text="set initial attributes")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
-    layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
-    layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
+    #layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
+    #layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
+   
 
 def register():
     """Registers the classes and functions of the addon"""

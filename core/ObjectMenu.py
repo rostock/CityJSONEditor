@@ -8,12 +8,11 @@ class VIEW3D_MT_cityobject_lod_submenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.label(text="LevelOfDetail")
-        # bei den folgenden Operatoren muss ein Weg gefunden werden 
-        layout.operator(SetLODOperator.bl_idname, text="1").lod = 1
-        layout.operator(SetLODOperator.bl_idname, text="2").lod = 2
-        layout.operator(SetLODOperator.bl_idname, text="3").lod = 3
-        layout.operator(SetLODOperator.bl_idname, text="4").lod = 4
-        layout.operator(SetLODOperator.bl_idname, text="5").lod = 5
+        layout.operator(SetLODOperator.bl_idname, text="1").CJEOlod = 1
+        layout.operator(SetLODOperator.bl_idname, text="2").CJEOlod = 2
+        layout.operator(SetLODOperator.bl_idname, text="3").CJEOlod = 3
+        layout.operator(SetLODOperator.bl_idname, text="4").CJEOlod = 4
+        layout.operator(SetLODOperator.bl_idname, text="5").CJEOlod = 5
 
 class VIEW3D_MT_cityobject_type_submenu(bpy.types.Menu):
     bl_label = 'Type'
@@ -22,7 +21,7 @@ class VIEW3D_MT_cityobject_type_submenu(bpy.types.Menu):
         layout = self.layout
         layout.label(text="Type")
         # bei den folgenden Operatoren muss ein Weg gefunden werden 
-        layout.operator(SetTypeOperator.bl_idname, text="CompositeSurface").type = "CompositeSurface"
+        layout.operator(SetTypeOperator.bl_idname, text="CompositeSurface").CJEOtype = "CompositeSurface"
 
 class VIEW3D_MT_cityobject_construction_submenu(bpy.types.Menu):
     bl_label = 'Construction'
@@ -36,7 +35,7 @@ class VIEW3D_MT_cityobject_construction_submenu(bpy.types.Menu):
         list = ft.getAllFeatures()
         
         for feature in list:
-            layout.operator(SetConstructionOperator.bl_idname, text=feature).construction = feature
+            layout.operator(SetConstructionOperator.bl_idname, text=feature).CJEOconstruction = feature
 
 class VIEW3D_MT_cityobject_construction_menu(bpy.types.Menu):
     bl_label = ''
@@ -57,43 +56,49 @@ class VIEW3D_MT_cityobject_lod_menu(bpy.types.Menu):
         pass
 
 class SetLODOperator(bpy.types.Operator):
-    bl_idname = "wm.set_lod"
+    bl_idname = "wm.set_cjeolod"
     bl_label = "SetLODOperator"
-    lod: bpy.props.IntProperty(
-        name = 'lod',
-        default=2,
-        min=1,
-        max=5,
-        description="LevelOfDetail"
-    )
+    #lod: bpy.props.IntProperty(
+    #    name = 'CJEOlod',
+    #    default=2,
+    #    min=1,
+    #    max=5,
+    #    description="LevelOfDetail"
+    #)
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        obj.addCustomIntegerProperty('CBOlod',self.lod)
+        try:
+            print(obj.CJEOlod)
+        except:
+            obj.addCustomProperty('CJEOlod')
+        obj.setCustomProperty('CJEOlod',self.lod)
         return {'FINISHED'} 
 
 class SetTypeOperator(bpy.types.Operator):
-    bl_idname = "wm.set_type"
+    bl_idname = "wm.set_cjeotype"
     bl_label = "SetTypeOperator"
-    type: bpy.props.StringProperty(
-        name = 'type',
-        default= 'CompositeSurface',
-    )
+    #type: bpy.props.StringProperty(
+    #    name = 'CBOtype',
+    #     default= 'CompositeSurface',
+    #)
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        obj.addCustomStringProperty('CBOtype',self.type)
+    #    obj.addCustomStringProperty('CBOtype',self.type)
+        obj.setCustomProperty('CBOtype',self.type)
         return {'FINISHED'} 
 
 class SetConstructionOperator(bpy.types.Operator):
-    bl_idname = "wm.set_construction"
+    bl_idname = "wm.set_cjeoconstruction"
     bl_label = "SetConstructionOperator"
-    construction: bpy.props.StringProperty(
-        name = 'construction',
-        default= 'Building',
-    )
+    #construction: bpy.props.StringProperty(
+    #    name = 'CBOconstruction',
+    #    default= 'Building',
+    #)
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        obj.addCustomStringProperty('CBOconstruction',self.construction)
+    #    obj.addCustomStringProperty('CBOconstruction',self.construction)
+        obj.setCustomProperty('CBOconstruction',self.construction)
         return {'FINISHED'} 

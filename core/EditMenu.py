@@ -11,7 +11,9 @@ class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
     def draw(self, context):
         print("building edit menu")
         layout = self.layout
-        obj = context.selected_objects            
+        obj = context.selected_objects  
+        for ob in obj:
+            print (dir(ob))          
         try:
             constructionType = getattr(obj[0], "CBOconstruction")
             features = FeatureTypes()
