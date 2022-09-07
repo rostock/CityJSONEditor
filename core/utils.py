@@ -153,6 +153,7 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
         mesh_data = bpy.data.meshes.new(name)
 
         for material in materials:
+            print(material.name)
             mesh_data.materials.append(material)
 
         indices = [i for face in faces for i in face]
@@ -174,6 +175,7 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
         mesh_data.loops.foreach_set("vertex_index", indices)
         mesh_data.polygons.foreach_set("loop_start", loop_starts)
         mesh_data.polygons.foreach_set("loop_total", loop_totals)
+        print(material_indices)
         if len(material_indices) == len(faces):
             mesh_data.polygons.foreach_set("material_index", material_indices)
         elif len(material_indices) > len(faces):

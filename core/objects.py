@@ -133,7 +133,7 @@ class CityJSONParser:
         #appearances = []
         #textureValues = []
 
-        #""" 
+        """ 
         ##### Material only #####
 
         if 'semantics' in geom:
@@ -147,37 +147,54 @@ class CityJSONParser:
                 color = ft.getRGBColor(obj['type'], surface['type'])
                 new_material.setColor(color)
 
-
-                # set color of material
-                #ew_material.setColor(surface['type'])
-
-
                 # set custom property "type"
                 new_material.addCustomStringProperty("CJEMtype",surface['type'])
                 mats.append(new_material.material)  
-        #"""     
+        """     
         
         ##### with optional texture #####
-        """
+        #"""
         if 'semantics' in geom:
+            # links between geometry-surfaces and surface-types
             values = geom['semantics']['values']
+            # value for getting the next texture appearance which comes from an array that is not of the same lenght as the surfaces/materials
             texture_index = 0
-            for surface in geom['semantics']['surfaces']:
-                # create new material
-                new_material = CityMaterial(surface['type'])
+            # initialize the mats array so that it can be filled in the same order as "values"
+            mats = [None]*len(geom['semantics']['surfaces'])
 
-                if 'texture' in geom:
+            for surface_index, material_index in enumerate(geom['semantics']['values']):
+                # name of the type of material assigned to the current surface
+                current_material = geom['semantics']['surfaces'][material_index]['type']
+                # create new material
+                new_material = CityMaterial(current_material)
+
+                if geom['texture']['unnamed']['values'][surface_index] != [[None]]:
                     #set texture of material
                     new_material.setTexture(data, texture_index, filepath)
+                    #print("material: " +str(current_material)+" has been added!" )
+                    #print("surface: "+ str(surface_index))
+                    #print("material: "+ str(material_index))
+                    #print("#####")
+
+                    # go to next index in the texture-appearances
                     texture_index += 1
+
                 else:
                     # set color of material
-                    new_material.setColor(surface['type'])
-                # set custom property "type"
-                new_material.addCustomProperty("type",surface['type'])
-                mats.append(new_material.material)  
+                    ft = FeatureTypes()
+                    color = ft.getRGBColor(obj['type'], current_material)
+                    new_material.setColor(color)
+                    #print("material: " +str(current_material)+" has been added!" )
+                    #print("surface: "+ str(surface_index))
+                    #print("material: "+ str(material_index))
+                    #print("#####")
 
-        """
+                # set custom property "type"
+                new_material.addCustomStringProperty("CJEMtype",current_material)
+                # put the material in the correct position in the mats array so that the links declared in "values" are followed 
+                mats[geom['semantics']['values'][surface_index]] = new_material.material
+
+        #"""
 
 
         ###############

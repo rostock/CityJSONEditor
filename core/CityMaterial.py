@@ -64,21 +64,17 @@ class CityMaterial:
         # loading of image
         image  = bpy.data.images.load(str(image_path))
         # check, if data has been loaded into the variable
-        print(str(image.has_data))
+        # print(str(image.has_data))
         
         
-        self.use_nodes = True
+        self.material.use_nodes = True
 
         # setup node tree
-
-        material_output = self.node_tree.nodes.get('Material Output')
-        principled_BSDF = self.node_tree.nodes.get('Principled BSDF')
-
-        texture_node = self.node_tree.nodes.new('ShaderNodeTexImage')
+        principled_BSDF = self.material.node_tree.nodes.get('Principled BSDF')
+        texture_node = self.material.node_tree.nodes.new('ShaderNodeTexImage')
         texture_node.image = image
-
-        self.node_tree.links.new(texture_node.outputs[0], principled_BSDF.inputs[0]) 
-
+        self.material.node_tree.links.new(texture_node.outputs[0], principled_BSDF.inputs[0])
+        print("image texture: "+str(image_path_raw)+" was used!")
         
 
     def uvMapping(self,uv_parameters):

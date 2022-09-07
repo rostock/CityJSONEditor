@@ -44,7 +44,7 @@ class SetSurfaceOperator(bpy.types.Operator):
                 mat = CityMaterial(name=self.surfaceType)
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)
-                mat.addCustomStringProperty('CBMtype', self.surfaceType)
+                mat.addCustomStringProperty('CJEMtype', self.surfaceType)
                 ft = FeatureTypes()
                 color = ft.getRGBColor(obj.CBOconstruction, self.surfaceType)
                 mat.setColor(color)
