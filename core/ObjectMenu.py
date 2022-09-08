@@ -58,13 +58,13 @@ class VIEW3D_MT_cityobject_lod_menu(bpy.types.Menu):
 class SetLODOperator(bpy.types.Operator):
     bl_idname = "wm.set_cjeolod"
     bl_label = "SetLODOperator"
-    #lod: bpy.props.IntProperty(
-    #    name = 'CJEOlod',
-    #    default=2,
-    #    min=1,
-    #    max=5,
-    #    description="LevelOfDetail"
-    #)
+    CJEOlod: bpy.props.IntProperty(
+        name = 'CJEOlod',
+        default=2,
+        min=1,
+        max=5,
+        description="LevelOfDetail"
+    )
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
@@ -72,33 +72,33 @@ class SetLODOperator(bpy.types.Operator):
             print(obj.CJEOlod)
         except:
             obj.addCustomProperty('CJEOlod')
-        obj.setCustomProperty('CJEOlod',self.lod)
+        obj.setCustomProperty('CJEOlod',self.CJEOlod)
         return {'FINISHED'} 
 
 class SetTypeOperator(bpy.types.Operator):
     bl_idname = "wm.set_cjeotype"
     bl_label = "SetTypeOperator"
-    #type: bpy.props.StringProperty(
-    #    name = 'CBOtype',
-    #     default= 'CompositeSurface',
-    #)
+    CJEOtype: bpy.props.StringProperty(
+        name = 'CJEOtype',
+        default= 'CompositeSurface',
+    )
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
     #    obj.addCustomStringProperty('CBOtype',self.type)
-        obj.setCustomProperty('CBOtype',self.type)
+        obj.setCustomProperty('CJEOtype',self.CJEOtype)
         return {'FINISHED'} 
 
 class SetConstructionOperator(bpy.types.Operator):
     bl_idname = "wm.set_cjeoconstruction"
     bl_label = "SetConstructionOperator"
-    #construction: bpy.props.StringProperty(
-    #    name = 'CBOconstruction',
-    #    default= 'Building',
-    #)
+    CJEOconstruction: bpy.props.StringProperty(
+        name = 'CJEOconstruction',
+        default= 'Building',
+    )
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
     #    obj.addCustomStringProperty('CBOconstruction',self.construction)
-        obj.setCustomProperty('CBOconstruction',self.construction)
+        obj.setCustomProperty('CBOconstruction',self.CJEOconstruction)
         return {'FINISHED'} 

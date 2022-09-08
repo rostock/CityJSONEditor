@@ -128,12 +128,18 @@ class SetAttributes(bpy.types.Operator):
     bl_label = "SetAttributes"
 
     def execute(self, context):
-        for obj in context.selected_objects: 
-            dir(obj)
-            # obj attributes vergleichen mit CityObjectProps
-            #for attr in dir(CityObject.CityObjectProps):
-            #    if not hasattr(obj, attr):
-            #        print('selected Object has no' + attr)
+        print('setAttributes')
+        obj = CityObject.CityObject(context.active_object)
+        #print(dir(context.active_object))
+        #print(obj.blenderObj.name)
+        #print(dir(obj.blenderObj))
+        # obj attributes vergleichen mit CityObjectProps
+        for attr in CityObject.CityObjectProps.__dict__.keys():
+            if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
+                obj.addCustomProperty(attr)
+                obj.setCustomProperty(attr, None)
+        #print(dir(obj.blenderObj))
+        #print(dir(context.active_object))
         return {'FINISHED'} 
 
 classes = (
@@ -181,8 +187,8 @@ def objectmenu_func(self, context):
     #hier muss noch eine IF-Anweisung, dass die Funktion nur angezeigt wird, wenn ein verpflichtendes Attribut fehlt
     layout.operator(SetAttributes.bl_idname, text="set initial attributes")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
-    #layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
-    #layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
+    layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
+    layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
    
 
 def register():
