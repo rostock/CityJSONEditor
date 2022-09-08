@@ -206,8 +206,8 @@ class CityJSONParser:
                                       mats,
                                       values)
 
-        # UV Mapping
-        uvMapping(geom_obj,geom)
+        # UV Mapping of the textures
+        uvMapping(geom_obj,self.data, geom)
 
         if 'lod' in geom:
             geom_obj['lod'] = geom['lod']
@@ -425,7 +425,7 @@ class CityJSONExporter:
                 # Only try to build an appearance if there actually is a texture used in this material
                 # which can be checked by the existence of more than 2 nodes
                 if (len(material_slot.material.node_tree.nodes))>2:
-                    image_basename = material_slot.material.node_tree.nodes[2].image.name
+                    image_basename = material_slot.material.node_tree.nodes['Image Texture'].image.name
                     init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
                     # add index of the material with a texture to the list of such materials
                     materials_with_texture.append(material_index)

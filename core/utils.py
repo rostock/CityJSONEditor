@@ -192,24 +192,35 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 
     return new_object
 
-def uvMapping(object, geom):
-    uv_coords = geom['appearances']['vertex-texture']
+def uvMapping(object, data, geom):
+    # uv coordinates from json file
+    uv_coords = data['appearance']['vertices-texture']
+    # all data from the json file
     mesh_data = object.data
+    # create a new uv layer
+    # this uv-unwraps all faces even if they don't have a texture (is irrelevent though)
     uv_layer = mesh_data.uv_layers.new()
+    # set the new uv layer as the active layer
     mesh_data.uv_layers.active = uv_layer
 
-    for face in geom['texture']['unnamed']['values']:
-        if geom['texture']['unnamed']['values'][face] != [[None]]:
-            poly = mesh_data.polygons[face]
-            for vert_idx, loop_idx in zip(poly.vertices, poly.loop_indices):
-                uv_layer.data[loop_idx].uv = (0,0)
-            pass
+    # iterate through faces
+    for face_index, face in enumerate(geom['texture']['unnamed']['values']):
+        # if the face has a texture (texture reference is not none)
+        if face != [[None]]:
+            # get the polygon/face from the newly created mesh
+            poly = mesh_data.polygons[face_index]
+            # iterate trough the mesh-loops of the polygon/face
+            for vert_idx, loop_idx in enumerate(poly.loop_indices):
+                # get the index of the uv that belongs to the vertex of the face
+                # this is mapped using the values in the geom['texture']['unnamed']['values'], where the value at index 0 is the 
+                # index of the cooresponding texture-appearance, which means that the index of the vertex has to be increased by 1
+                texture_map_value = face[0][vert_idx+1]
+                # set UVs of the uv-layer using the texture_map_value as index for the list in the json data
+                uv_layer.data[loop_idx].uv = (uv_coords[texture_map_value][0],uv_coords[texture_map_value][1])
+        
+        # if there is no texture --> do nothing  
         else:
             pass
-
-    #for face in mesh_data.polygons:
-    #    for vert_idx, loop_idx in zip(face.vertices, face.loop_indices):
-    #        uv_layer.data[loop_idx].uv = (, )
 
 
 def get_collection(collection_name):
