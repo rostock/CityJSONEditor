@@ -15,7 +15,7 @@ class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
         for ob in obj:
             print (dir(ob))          
         try:
-            constructionType = getattr(obj[0], "CBOconstruction")
+            constructionType = getattr(obj[0], "CJEOconstruction")
             features = FeatureTypes()
             layout.label(text=constructionType)  
             for surface in features.getAllElementsOfFeatureType(constructionType):
@@ -50,9 +50,9 @@ class SetSurfaceOperator(bpy.types.Operator):
                 mat = CityMaterial(name=self.surfaceType, matIndex=NULL, obj=NULL)                
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)
-                mat.addCustomStringProperty('CBMtype', self.surfaceType)
+                mat.addCustomStringProperty('CJEMtype', self.surfaceType)
                 ft = FeatureTypes()
-                color = ft.getRGBColor(obj.CBOconstruction, self.surfaceType)
+                color = ft.getRGBColor(obj.CJEOconstruction, self.surfaceType)
                 mat.setColor(color)
       
         return {'FINISHED'}

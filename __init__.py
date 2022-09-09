@@ -130,22 +130,36 @@ class SetAttributes(bpy.types.Operator):
     def execute(self, context):
         print('setAttributes')
         obj = CityObject.CityObject(context.active_object)
-        #print(dir(context.active_object))
-        #print(obj.blenderObj.name)
-        #print(dir(obj.blenderObj))
-        # obj attributes vergleichen mit CityObjectProps
+        try:
+            print(context.active_object.CJEOlod)
+        except:
+            print('lod noch nicht vorhanden')
         for attr in CityObject.CityObjectProps.__dict__.keys():
             if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
+                print("Attr existiert nicht")
                 obj.addCustomProperty(attr)
-                obj.setCustomProperty(attr, None)
+                #obj.setCustomProperty(attr, None)
         #print(dir(obj.blenderObj))
         #print(dir(context.active_object))
+        try:
+            print(context.active_object.CJEOlod)
+        except:
+            print('lod noch nicht vorhanden')
         return {'FINISHED'} 
+
+class GetLOD(bpy.types.Operator):
+    bl_idname = "wm.get_lod"
+    bl_label = "getlod"
+    def execute(self, context):
+        obj = CityObject.CityObject(context.active_object)
+        obj.printAttr('CJEOtype')
+
 
 classes = (
     ImportCityJSON,
     ExportCityJSON,
     prop.UP3DATE_CityjsonfyProperties,
+    CityObject.CityObjectProps,
     operator.UP3DATECityjsonfy,
     ui.UP3DATE_PT_gui,
     EditMenu.SetSurfaceOperator,
@@ -160,7 +174,8 @@ classes = (
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
     ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
-    SetAttributes 
+    SetAttributes,
+    GetLOD 
 )
 
 def menu_func_export(self, context):
@@ -186,6 +201,7 @@ def objectmenu_func(self, context):
     layout.label(text="CityJSON Options")
     #hier muss noch eine IF-Anweisung, dass die Funktion nur angezeigt wird, wenn ein verpflichtendes Attribut fehlt
     layout.operator(SetAttributes.bl_idname, text="set initial attributes")
+    layout.operator(GetLOD.bl_idname, text="get LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")

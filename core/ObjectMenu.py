@@ -68,10 +68,6 @@ class SetLODOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        try:
-            print(obj.CJEOlod)
-        except:
-            obj.addCustomProperty('CJEOlod')
         obj.setCustomProperty('CJEOlod',self.CJEOlod)
         return {'FINISHED'} 
 
@@ -85,20 +81,20 @@ class SetTypeOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-    #    obj.addCustomStringProperty('CBOtype',self.type)
+        #    obj.addCustomStringProperty('CBOtype',self.type)
         obj.setCustomProperty('CJEOtype',self.CJEOtype)
         return {'FINISHED'} 
 
 class SetConstructionOperator(bpy.types.Operator):
     bl_idname = "wm.set_cjeoconstruction"
     bl_label = "SetConstructionOperator"
-    CJEOconstruction: bpy.props.StringProperty(
+    CJEconstruction: bpy.props.StringProperty(
         name = 'CJEOconstruction',
         default= 'Building',
     )
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-    #    obj.addCustomStringProperty('CBOconstruction',self.construction)
-        obj.setCustomProperty('CBOconstruction',self.CJEOconstruction)
+        #    obj.addCustomStringProperty('CBOconstruction',self.construction)
+        obj.setCustomProperty('CJEOconstruction',self.CJEOconstruction)
         return {'FINISHED'} 
