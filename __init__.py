@@ -127,24 +127,17 @@ class SetAttributes(bpy.types.Operator):
     bl_idname = "wm.set_attributes"
     bl_label = "SetAttributes"
 
-    def execute(self, context):
-        print('setAttributes')
-        obj = CityObject.CityObject(context.active_object)
-        try:
-            print(context.active_object.CJEOlod)
-        except:
-            print('lod noch nicht vorhanden')
+    def execute(self,context):
+        print('settng Attributes...')
+        obj = CityObject.CityObject(bpy.context.active_object)
+        #obj.addCustomProperty()
         for attr in CityObject.CityObjectProps.__dict__.keys():
+            print(attr)
             if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
                 print("Attr existiert nicht")
                 obj.addCustomProperty(attr)
-                #obj.setCustomProperty(attr, None)
-        #print(dir(obj.blenderObj))
-        #print(dir(context.active_object))
-        try:
-            print(context.active_object.CJEOlod)
-        except:
-            print('lod noch nicht vorhanden')
+
+        print('finished setting attributes...')
         return {'FINISHED'} 
 
 class GetLOD(bpy.types.Operator):
@@ -175,7 +168,7 @@ classes = (
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
     ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
     SetAttributes,
-    GetLOD 
+    GetLOD
 )
 
 def menu_func_export(self, context):

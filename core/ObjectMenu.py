@@ -88,13 +88,13 @@ class SetTypeOperator(bpy.types.Operator):
 class SetConstructionOperator(bpy.types.Operator):
     bl_idname = "wm.set_cjeoconstruction"
     bl_label = "SetConstructionOperator"
-    CJEconstruction: bpy.props.StringProperty(
+    CJEOconstruction: bpy.props.StringProperty(
         name = 'CJEOconstruction',
         default= 'Building',
     )
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        #    obj.addCustomStringProperty('CBOconstruction',self.construction)
+    #    obj.addCustomStringProperty('CBOconstruction',self.construction)
         obj.setCustomProperty('CJEOconstruction',self.CJEOconstruction)
         return {'FINISHED'} 
