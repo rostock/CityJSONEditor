@@ -1,5 +1,3 @@
-from asyncio.windows_events import NULL
-from types import NoneType
 import bpy
 from .FeatureTypes import FeatureTypes
 from .CityMaterial import CityMaterial
@@ -11,11 +9,10 @@ class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
     def draw(self, context):
         print("building edit menu")
         layout = self.layout
-        obj = context.selected_objects  
-        for ob in obj:
-            print (dir(ob))          
+        obj = context.selected_objects            
+        
         try:
-            constructionType = getattr(obj[0], "CJEOconstruction")
+            constructionType = getattr(obj[0], "CBOconstruction")
             features = FeatureTypes()
             layout.label(text=constructionType)  
             for surface in features.getAllElementsOfFeatureType(constructionType):
@@ -38,21 +35,18 @@ class SetSurfaceOperator(bpy.types.Operator):
     )
     def execute(self, context):
         obj = context.object
+        print("Klick:" + obj.CBOconstruction)
         if obj.type == 'MESH':
             mesh = obj.data # Assumed that obj.type == 'MESH'
             obj.update_from_editmode() # Loads edit-mode data into object data
             selected_polygons = [p for p in mesh.polygons if p.select]
             for face in selected_polygons:
-                
-                matOld = CityMaterial(name=None, matIndex=face.material_index, obj=obj)
-                matOld.deleteMaterial(obj=obj, matIndex=face.material_index)
-                del matOld
-                mat = CityMaterial(name=self.surfaceType, matIndex=NULL, obj=NULL)                
+                mat = CityMaterial(name=self.surfaceType)
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)
                 mat.addCustomStringProperty('CJEMtype', self.surfaceType)
                 ft = FeatureTypes()
-                color = ft.getRGBColor(obj.CJEOconstruction, self.surfaceType)
+                color = ft.getRGBColor(obj.CBOconstruction, self.surfaceType)
                 mat.setColor(color)
       
         return {'FINISHED'}

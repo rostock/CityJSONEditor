@@ -8,11 +8,12 @@ class VIEW3D_MT_cityobject_lod_submenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.label(text="LevelOfDetail")
-        layout.operator(SetLODOperator.bl_idname, text="1").CJEOlod = 1
-        layout.operator(SetLODOperator.bl_idname, text="2").CJEOlod = 2
-        layout.operator(SetLODOperator.bl_idname, text="3").CJEOlod = 3
-        layout.operator(SetLODOperator.bl_idname, text="4").CJEOlod = 4
-        layout.operator(SetLODOperator.bl_idname, text="5").CJEOlod = 5
+        # bei den folgenden Operatoren muss ein Weg gefunden werden 
+        layout.operator(SetLODOperator.bl_idname, text="1").lod = 1
+        layout.operator(SetLODOperator.bl_idname, text="2").lod = 2
+        layout.operator(SetLODOperator.bl_idname, text="3").lod = 3
+        layout.operator(SetLODOperator.bl_idname, text="4").lod = 4
+        layout.operator(SetLODOperator.bl_idname, text="5").lod = 5
 
 class VIEW3D_MT_cityobject_type_submenu(bpy.types.Menu):
     bl_label = 'Type'
@@ -21,7 +22,7 @@ class VIEW3D_MT_cityobject_type_submenu(bpy.types.Menu):
         layout = self.layout
         layout.label(text="Type")
         # bei den folgenden Operatoren muss ein Weg gefunden werden 
-        layout.operator(SetTypeOperator.bl_idname, text="CompositeSurface").CJEOtype = "CompositeSurface"
+        layout.operator(SetTypeOperator.bl_idname, text="CompositeSurface").type = "CompositeSurface"
 
 class VIEW3D_MT_cityobject_construction_submenu(bpy.types.Menu):
     bl_label = 'Construction'
@@ -35,7 +36,7 @@ class VIEW3D_MT_cityobject_construction_submenu(bpy.types.Menu):
         list = ft.getAllFeatures()
         
         for feature in list:
-            layout.operator(SetConstructionOperator.bl_idname, text=feature).CJEOconstruction = feature
+            layout.operator(SetConstructionOperator.bl_idname, text=feature).construction = feature
 
 class VIEW3D_MT_cityobject_construction_menu(bpy.types.Menu):
     bl_label = ''
@@ -56,10 +57,10 @@ class VIEW3D_MT_cityobject_lod_menu(bpy.types.Menu):
         pass
 
 class SetLODOperator(bpy.types.Operator):
-    bl_idname = "wm.set_cjeolod"
+    bl_idname = "wm.set_lod"
     bl_label = "SetLODOperator"
-    CJEOlod: bpy.props.IntProperty(
-        name = 'CJEOlod',
+    lod: bpy.props.IntProperty(
+        name = 'lod',
         default=2,
         min=1,
         max=5,
@@ -68,33 +69,31 @@ class SetLODOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        obj.setCustomProperty('CJEOlod',self.CJEOlod)
+        obj.addCustomIntegerProperty('CBOlod',self.lod)
         return {'FINISHED'} 
 
 class SetTypeOperator(bpy.types.Operator):
-    bl_idname = "wm.set_cjeotype"
+    bl_idname = "wm.set_type"
     bl_label = "SetTypeOperator"
-    CJEOtype: bpy.props.StringProperty(
-        name = 'CJEOtype',
+    type: bpy.props.StringProperty(
+        name = 'type',
         default= 'CompositeSurface',
     )
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        #    obj.addCustomStringProperty('CBOtype',self.type)
-        obj.setCustomProperty('CJEOtype',self.CJEOtype)
+        obj.addCustomStringProperty('CBOtype',self.type)
         return {'FINISHED'} 
 
 class SetConstructionOperator(bpy.types.Operator):
-    bl_idname = "wm.set_cjeoconstruction"
+    bl_idname = "wm.set_construction"
     bl_label = "SetConstructionOperator"
-    CJEOconstruction: bpy.props.StringProperty(
-        name = 'CJEOconstruction',
+    construction: bpy.props.StringProperty(
+        name = 'construction',
         default= 'Building',
     )
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-    #    obj.addCustomStringProperty('CBOconstruction',self.construction)
-        obj.setCustomProperty('CJEOconstruction',self.CJEOconstruction)
+        obj.addCustomStringProperty('CBOconstruction',self.construction)
         return {'FINISHED'} 
