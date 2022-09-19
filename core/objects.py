@@ -31,20 +31,21 @@ import bmesh
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
 
-    def __init__(self, filepath, material_type, reuse_materials=True, clear_scene=True):
+    def __init__(self, filepath):
+    #def __init__(self, filepath, material_type, reuse_materials=True, clear_scene=True):
         self.filepath = filepath
-        self.clear_scene = clear_scene
+        #self.clear_scene = clear_scene
 
         self.data = {}
         self.vertices = []
 
-        if material_type == 'SURFACES':
+        """if material_type == 'SURFACES':
             if reuse_materials:
                 self.material_factory = ReuseMaterialFactory()
             else:
                 self.material_factory = BasicMaterialFactory()
         else:
-            self.material_factory = CityObjectTypeMaterialFactory()
+            self.material_factory = CityObjectTypeMaterialFactory()"""
 
     def load_data(self):
         """Loads the CityJSON data from the file"""
@@ -210,21 +211,26 @@ class CityJSONParser:
         uvMapping(geom_obj,self.data, geom)
 
         if 'lod' in geom:
-            geom_obj['lod'] = geom['lod']
+            geom_obj['CJEOlod'] = geom['lod']
 
-        geom_obj['type'] = geom['type']
+        geom_obj['CJEOtype'] = geom['type']
 
         return geom_obj
 
     def execute(self):
         """Execute the import process"""
 
-        if self.clear_scene:
+        """if self.clear_scene:
             common_setup()
             remove_all_materials()
             remove_scene_objects()
-            
-            
+        """    
+        
+        common_setup()
+        remove_all_materials()
+        remove_scene_objects()
+        
+
         print("\nImporting CityJSON file...")
 
         self.load_data()
@@ -353,8 +359,8 @@ class CityJSONExporter:
         init_json["CityObjects"].setdefault(CityObject_id,{})
         init_json["CityObjects"][CityObject_id].setdefault('geometry',[])
         #Check if the user has assigned the custom properties 'lod' and 'type' correctly 
-        if ('lod' in city_object.keys() and (type(city_object['lod']) == float or type(city_object['lod'])==int) ):
-            if ('type' in city_object.keys() and (city_object['type'] == "MultiSurface" or city_object['type'] == "CompositeSurface" or city_object['type'] == "Solid")):
+        if ('CJEOlod' in city_object.keys() and (type(city_object['CJEOlod']) == float or type(city_object['CJEOlod'])==int) ):
+            if ('CJEOtype' in city_object.keys() and (city_object['CJEOtype'] == "MultiSurface" or city_object['CJEOtype'] == "CompositeSurface" or city_object['CJEOtype'] == "Solid")):
                 #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra keys (within_geometry) to store it.
                 #Otherwise just create the rest of the tags
                 if city_object.data.materials:
@@ -362,14 +368,14 @@ class CityJSONExporter:
                     if 'theme' in bpy.context.scene.world:
                         themeName =  bpy.context.scene.world["theme"]
                     #init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})  ##Auskommentiert von Tim
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}},'lod':city_object['lod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}},'lod':city_object['CJEOlod']})
                 else:
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'boundaries':[],'lod':city_object['CJEOlod']})
             else:
-                print ("You either forgot to add `type` as a custom property of the geometry, ", name, ", or 'type' is not `MultiSurface`,`CompositeSurface` or `Solid`")
+                print ("You either forgot to add `type` as a custom property of the geometry, ", city_object.data.name, ", or 'type' is not `MultiSurface`,`CompositeSurface` or `Solid`")
                 sys.exit(None)
         else:
-            print ("You either forgot to add `lod` as a custom property of the geometry, ", name, ", or 'lod' is not a number")
+            print ("You either forgot to add `lod` as a custom property of the geometry, ", city_object.data.name, ", or 'lod' is not a number")
             sys.exit(None)
             
         #Accessing object's vertices 
@@ -412,7 +418,7 @@ class CityJSONExporter:
 
         # Create semantic surfaces
         semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
-        if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
+        if city_object['CJEOtype'] == 'MultiSurface' or city_object['CJEOtype'] == 'CompositeSurface':
             
             ##### Texture Export ####  
             
@@ -492,7 +498,7 @@ class CityJSONExporter:
                 link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
 
 
-        if city_object['type'] == 'Solid':
+        if city_object['CJEOtype'] == 'Solid':
 
             init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([])
             for face in object_faces:
@@ -575,6 +581,11 @@ class CityJSONExporter:
                     
                     fileInfosTarget =self.filepath.split('\\')
                     folderTarget =self.filepath.replace(fileInfosTarget[ len(fileInfosTarget) - 1 ],"")
+
+                    print("baseFolder: "+str(baseFolder))
+                    print("folderSource: "+str(folderSource))
+                    print("fileSourceName: "+str(fileSourceName))
+
                 
                     src_path = baseFolder + folderSource.replace("//","") + fileSourceName
                     dst_path = folderTarget + r"appearance\\" + fileSourceName

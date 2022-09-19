@@ -64,10 +64,12 @@ class ImportCityJSON(Operator, ImportHelper):
     def execute(self, context):
         """Executes the import process"""
 
-        parser = CityJSONParser(self.filepath,
+        """parser = CityJSONParser(self.filepath,
                                 material_type=self.material_type,
                                 reuse_materials=self.reuse_materials,
-                                clear_scene=self.clean_scene)
+                                clear_scene=self.clean_scene)"""
+
+        parser = CityJSONParser(self.filepath)
 
         return parser.execute()
 
