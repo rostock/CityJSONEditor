@@ -9,7 +9,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.objects import CityJSONParser, CityJSONExporter
-from .core import ui, prop, operator, EditMenu, ObjectMenu, MaterialProps
+from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject
 
 bl_info = {
     "name": "CityJSONEditor",
@@ -123,10 +123,36 @@ class ExportCityJSON(Operator, ExportHelper):
                                     precision=self.precision)
         return exporter.execute()
 
+class SetAttributes(bpy.types.Operator):
+    bl_idname = "wm.set_attributes"
+    bl_label = "SetAttributes"
+
+    def execute(self,context):
+        print('settng Attributes...')
+        obj = CityObject.CityObject(bpy.context.active_object)
+        #obj.addCustomProperty()
+        for attr in CityObject.CityObjectProps.__dict__.keys():
+            print(attr)
+            if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
+                print("Attr existiert nicht")
+                obj.addCustomProperty(attr)
+
+        print('finished setting attributes...')
+        return {'FINISHED'} 
+
+class GetLOD(bpy.types.Operator):
+    bl_idname = "wm.get_lod"
+    bl_label = "getlod"
+    def execute(self, context):
+        obj = CityObject.CityObject(context.active_object)
+        obj.printAttr('CJEOtype')
+
+
 classes = (
     ImportCityJSON,
     ExportCityJSON,
     prop.UP3DATE_CityjsonfyProperties,
+    CityObject.CityObjectProps,
     operator.UP3DATECityjsonfy,
     ui.UP3DATE_PT_gui,
     EditMenu.SetSurfaceOperator,
@@ -141,7 +167,8 @@ classes = (
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
     ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
-    MaterialProps.MaterialProps
+    SetAttributes,
+    GetLOD
 )
 
 def menu_func_export(self, context):
@@ -165,9 +192,13 @@ def objectmenu_func(self, context):
     layout = self.layout
     layout.separator()
     layout.label(text="CityJSON Options")
+    #hier muss noch eine IF-Anweisung, dass die Funktion nur angezeigt wird, wenn ein verpflichtendes Attribut fehlt
+    layout.operator(SetAttributes.bl_idname, text="set initial attributes")
+    layout.operator(GetLOD.bl_idname, text="get LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
+   
 
 def register():
     """Registers the classes and functions of the addon"""
@@ -183,11 +214,7 @@ def register():
     #add menu to object mod
     bpy.types.VIEW3D_MT_object.append(objectmenu_func)
     bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
-
-    #bpy.types.Material.my_settings = bpy.props.PointerProperty(type=MaterialProps)
-    #bpy.types.Object.my_settings = bpy.props.PointerProperty(type=MaterialProps)
-    #print(bpy.types.Object.my_settings)
-
+    bpy.types.PreferencesView.show_developer_ui = True
     
 def unregister():
     """Unregisters the classes and functions of the addon"""

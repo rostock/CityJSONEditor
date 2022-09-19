@@ -2,32 +2,29 @@ import bpy
 
 class CityMaterial:
 
-    def __init__(self,name):
-        self.material = self.createMaterial(name)
-        self.name = self.material.name #hier benötigen wir den richtigen Namen, also inklusive *.ooX
+    def __init__(self,name=None, matIndex=None, obj=None):
+        if not name == None:
+            self.material = self.createMaterial(name)
+            self.name = self.material.name #hier benötigen wir den richtigen Namen, also inklusive *.ooX
+        else:
+            slot = obj.material_slots[matIndex]
+            self.material = slot.material
+            self.name = self.material.name
 
     def createMaterial(self, name):
         return bpy.data.materials.new(name=name)
     
-    """
-    def addCustomProperty(self, customLabel, value):
-        obj = self.material
-        if customLabel not in obj:
-            obj[customLabel] = value
-            bpy.types.Material.type = bpy.props.StringProperty(name=customLabel, default="default value")
-            # bpy.data.materials[1].CityJSONType = "huhu"
-            self.material.type = value
-    
-    """
+    def deleteMaterial(self, obj=None, matIndex=None):
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.material_slot_remove_unused() #Funktioniert nicht, dadurch ist der Slot noch gefüllt
+        bpy.data.materials.remove(self.material) # Funktioniert
+        bpy.ops.object.mode_set(mode='EDIT')
+
     def addCustomStringProperty(self, customLabel, value):
         if not hasattr(self.material, customLabel):
             setattr(bpy.types.Material, customLabel, bpy.props.StringProperty(name=customLabel, default="blabla"))
         setattr(self.material, customLabel, value)
-            
 
-    #def setColor(self, rgb):
-    #    self.material.diffuse_color = (rgb[0], rgb[1], rgb[2], 1)
-    
     # set color of the material
     def setColor(self,rgb):
         # switch material to use nodes
@@ -36,7 +33,6 @@ class CityMaterial:
         # get node which has the color setting
         principled_BSDF = self.material.node_tree.nodes.get('Principled BSDF')
         principled_BSDF.inputs['Base Color'].default_value = (rgb[0], rgb[1], rgb[2], 1)
-        
 
     def addMaterialToObj(self, obj):
         obj.data.materials.append(self.material)
@@ -46,7 +42,6 @@ class CityMaterial:
         bpy.ops.object.material_slot_assign()      
 
     def setTexture(self, data, texture_index, filepath):
-
         # setup image
 
         # path of the imported file (json)
