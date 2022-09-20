@@ -9,7 +9,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.objects import CityJSONParser, CityJSONExporter
-from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject, MaterialProps
+from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject
 
 bl_info = {
     "name": "CityJSONEditor",
@@ -170,7 +170,6 @@ classes = (
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
     ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
-    MaterialProps.MaterialProps,
     SetAttributes,
     GetLOD
 )
@@ -196,6 +195,9 @@ def objectmenu_func(self, context):
     layout = self.layout
     layout.separator()
     layout.label(text="CityJSON Options")
+    #hier muss noch eine IF-Anweisung, dass die Funktion nur angezeigt wird, wenn ein verpflichtendes Attribut fehlt
+    layout.operator(SetAttributes.bl_idname, text="set initial attributes")
+    layout.operator(GetLOD.bl_idname, text="get LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
