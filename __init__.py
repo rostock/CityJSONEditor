@@ -9,7 +9,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from .core.objects import CityJSONParser, CityJSONExporter
-from .core import ui, prop, operator, EditMenu, ObjectMenu, MaterialProps
+from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject, MaterialProps
 
 bl_info = {
     "name": "CityJSONEditor",
@@ -36,7 +36,8 @@ class ImportCityJSON(Operator, ImportHelper):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
-
+    
+    """
     material_type: EnumProperty(
         name="Materials' type",
         items=(('SURFACES', "Surfaces",
@@ -59,7 +60,7 @@ class ImportCityJSON(Operator, ImportHelper):
         name="Clean scene",
         description="Remove existing objects from the scene before importing",
         default=True
-    )
+    )"""
 
     def execute(self, context):
         """Executes the import process"""
@@ -125,10 +126,36 @@ class ExportCityJSON(Operator, ExportHelper):
                                     precision=self.precision)
         return exporter.execute()
 
+class SetAttributes(bpy.types.Operator):
+    bl_idname = "wm.set_attributes"
+    bl_label = "SetAttributes"
+
+    def execute(self,context):
+        print('settng Attributes...')
+        obj = CityObject.CityObject(bpy.context.active_object)
+        #obj.addCustomProperty()
+        for attr in CityObject.CityObjectProps.__dict__.keys():
+            print(attr)
+            if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
+                print("Attr existiert nicht")
+                obj.addCustomProperty(attr)
+
+        print('finished setting attributes...')
+        return {'FINISHED'} 
+
+class GetLOD(bpy.types.Operator):
+    bl_idname = "wm.get_lod"
+    bl_label = "getlod"
+    def execute(self, context):
+        obj = CityObject.CityObject(context.active_object)
+        obj.printAttr('CJEOtype')
+
+
 classes = (
     ImportCityJSON,
     ExportCityJSON,
     prop.UP3DATE_CityjsonfyProperties,
+    CityObject.CityObjectProps,
     operator.UP3DATECityjsonfy,
     ui.UP3DATE_PT_gui,
     EditMenu.SetSurfaceOperator,
@@ -143,7 +170,9 @@ classes = (
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_menu,
     ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
-    MaterialProps.MaterialProps
+    MaterialProps.MaterialProps,
+    SetAttributes,
+    GetLOD
 )
 
 def menu_func_export(self, context):
