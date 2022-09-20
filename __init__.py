@@ -136,10 +136,12 @@ class SetAttributes(bpy.types.Operator):
         obj = CityObject.CityObject(bpy.context.active_object)
         for attr in CityObject.CityObjectProps.__dict__.keys():
             print(attr)
+            # initialize attributes
             if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
                 print("Attr existiert nicht")
                 obj.addCustomProperty(attr)
 
+            # set attribute-values of selected Object (default values) so they show up in UI
             if attr.startswith('CJEO'):
                 value = getattr(bpy.context.active_object, attr)
                 obj.setCustomProperty(attr, value)

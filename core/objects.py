@@ -15,8 +15,6 @@ from inspect import getmembers
 from pprint import pprint
 from datetime import datetime
 
-from .material import (BasicMaterialFactory, ReuseMaterialFactory,
-                       CityObjectTypeMaterialFactory)
 from .utils import (assign_properties, clean_buffer, clean_list,
                     coord_translate_axis_origin, coord_translate_by_offset, remove_all_materials,
                     remove_scene_objects, get_geometry_name, create_empty_object,
@@ -210,10 +208,12 @@ class CityJSONParser:
         # UV Mapping of the textures
         uvMapping(geom_obj,self.data, geom)
 
-        if 'lod' in geom:
+        try:
+            geom_obj['CJEOtype'] = geom['type']
             geom_obj['CJEOlod'] = geom['lod']
-
-        geom_obj['CJEOtype'] = geom['type']
+        except:
+            print("The Imported File doesn't contain TYPE and LOD of the geometry!")
+        
 
         return geom_obj
 
@@ -250,7 +250,7 @@ class CityJSONParser:
         progress = 0
         start_import = time.time()
 
-        # Creating empty meshes for every CityObjects and linking its
+        # Creating empty meshes for every CityObject and linking its
         # geometries as children-meshes
         for objid, obj in self.data['CityObjects'].items():
             cityobject = create_empty_object(objid)
@@ -262,8 +262,14 @@ class CityJSONParser:
             for i, geom in enumerate(obj['geometry']):
                 data = self.data
                 geom_obj = self.parse_geometry(objid, obj, geom, i, data, self.filepath)
+                ###
+                # temporary (working) solution for reading the Object/Building type
+                geom_obj['CJEOconstruction'] = obj['type']
+                ###
                 geom_obj.parent = cityobject
                 new_objects.append(geom_obj)
+
+           
 
             progress += 1
             print("Importing: {percent}% completed"
@@ -368,9 +374,9 @@ class CityJSONExporter:
                     if 'theme' in bpy.context.scene.world:
                         themeName =  bpy.context.scene.world["theme"]
                     #init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})  ##Auskommentiert von Tim
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}},'lod':city_object['CJEOlod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'lod':city_object['CJEOlod'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}}})
                 else:
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'boundaries':[],'lod':city_object['CJEOlod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'lod':city_object['CJEOlod'],'boundaries':[]})
             else:
                 print ("You either forgot to add `type` as a custom property of the geometry, ", city_object.data.name, ", or 'type' is not `MultiSurface`,`CompositeSurface` or `Solid`")
                 sys.exit(None)
