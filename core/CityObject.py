@@ -1,4 +1,5 @@
 from multiprocessing import context
+from multiprocessing.sharedctypes import Value
 import bpy
 
 
@@ -8,8 +9,10 @@ class CityObject:
         self.blenderObj = obj
     
     def addCustomProperty(self, customLabel):
-        setattr(bpy.types.Object, customLabel, getattr(CityObjectProps,customLabel)) # diese Funktion entspricht der generischen Umsetzung von bpy.types.Object.CJEOconsturction = bpy.props.StringProperty(name = 'CJEOconstruction', default= 'Building')
-        
+        # adds the custom property to all Objects in general
+        # the object the user is working on therefor has the default values but hasn't been assigned "propper" values
+        setattr(bpy.types.Object, customLabel, getattr(CityObjectProps,customLabel))
+
     def setCustomProperty(self, customLabel, value):
         if not value == None:
             setattr(self.blenderObj, customLabel, value)

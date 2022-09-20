@@ -1,6 +1,7 @@
 """Main module of the CityJSON Blender addon"""
 
 import json
+from multiprocessing.sharedctypes import Value
 import time
 import bpy
 
@@ -133,12 +134,15 @@ class SetAttributes(bpy.types.Operator):
     def execute(self,context):
         print('settng Attributes...')
         obj = CityObject.CityObject(bpy.context.active_object)
-        #obj.addCustomProperty()
         for attr in CityObject.CityObjectProps.__dict__.keys():
             print(attr)
             if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
                 print("Attr existiert nicht")
                 obj.addCustomProperty(attr)
+
+            if attr.startswith('CJEO'):
+                value = getattr(bpy.context.active_object, attr)
+                obj.setCustomProperty(attr, value)
 
         print('finished setting attributes...')
         return {'FINISHED'} 
