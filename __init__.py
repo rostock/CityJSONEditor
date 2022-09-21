@@ -15,7 +15,7 @@ from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject
 bl_info = {
     "name": "CityJSONEditor",
     "author": "Konstantinos Mastorakis, Tim Balschmiter, Hagen Schoenkaese",
-    "version": (0, 9, 0),
+    "version": (1, 0, 0),
     "blender": (3, 2, 2),
     "location": "File > Import > CityJSON (.json) || File > Export > CityJSON (.json)",
     "description": "Visualize, edit and export 3D structures encoded in CityJSON format",
