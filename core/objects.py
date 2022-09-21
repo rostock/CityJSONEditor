@@ -15,35 +15,35 @@ from inspect import getmembers
 from pprint import pprint
 from datetime import datetime
 
-from .material import (BasicMaterialFactory, ReuseMaterialFactory,
-                       CityObjectTypeMaterialFactory)
-from .utils import (assign_properties, clean_buffer, clean_list,
+from .utils import (assign_properties, clean_buffer,
                     coord_translate_axis_origin, coord_translate_by_offset, remove_all_materials,
                     remove_scene_objects, get_geometry_name, create_empty_object,
                     create_mesh_object, get_collection, write_vertices_to_CityJSON,
                     remove_vertex_duplicates, export_transformation_parameters,
-                    export_metadata, export_parent_child, export_attributes,
-                    store_semantic_surfaces, link_face_semantic_surface, common_setup)    
+                    export_metadata, export_parent_child,
+                    store_semantic_surfaces, link_face_semantic_surface, common_setup, uvMapping)    
 from .CityMaterial import (CityMaterial)          
-from .FeatureTypes import (FeatureTypes)  
+from .FeatureTypes import (FeatureTypes)
+import bmesh
 
 class CityJSONParser:
     """Class that parses a CityJSON file to Blender"""
 
-    def __init__(self, filepath, material_type, reuse_materials=True, clear_scene=True):
+    def __init__(self, filepath):
+    #def __init__(self, filepath, material_type, reuse_materials=True, clear_scene=True):
         self.filepath = filepath
-        self.clear_scene = clear_scene
+        #self.clear_scene = clear_scene
 
         self.data = {}
         self.vertices = []
 
-        if material_type == 'SURFACES':
+        """if material_type == 'SURFACES':
             if reuse_materials:
                 self.material_factory = ReuseMaterialFactory()
             else:
                 self.material_factory = BasicMaterialFactory()
         else:
-            self.material_factory = CityObjectTypeMaterialFactory()
+            self.material_factory = CityObjectTypeMaterialFactory()"""
 
     def load_data(self):
         """Loads the CityJSON data from the file"""
@@ -130,55 +130,41 @@ class CityJSONParser:
         # Array of the material indices
         values = []
 
-        #appearances = []
-        #textureValues = []
-
-        #""" 
-        ##### Material only #####
-
-        if 'semantics' in geom:
-            values = geom['semantics']['values']
-            for surface in geom['semantics']['surfaces']:
-                # create new material
-                new_material = CityMaterial(surface['type'])
-
-                # set color of material
-                ft = FeatureTypes()
-                color = ft.getRGBColor(obj['type'], surface['type'])
-                new_material.setColor(color)
-
-
-                # set color of material
-                #ew_material.setColor(surface['type'])
-
-
-                # set custom property "type"
-                new_material.addCustomStringProperty("CJEMtype",surface['type'])
-                mats.append(new_material.material)  
-        #"""     
-        
         ##### with optional texture #####
-        """
         if 'semantics' in geom:
+            # links between geometry-surfaces and surface-types
             values = geom['semantics']['values']
+            # value for getting the next texture appearance which comes from an array that is not of the same lenght as the surfaces/materials
             texture_index = 0
-            for surface in geom['semantics']['surfaces']:
-                # create new material
-                new_material = CityMaterial(surface['type'])
+            # initialize the mats array so that it can be filled in the same order as "values"
+            mats = [None]*len(geom['semantics']['surfaces'])
 
-                if 'texture' in geom:
+            for surface_index, material_index in enumerate(geom['semantics']['values']):
+                # name of the type of material assigned to the current surface
+                current_material = geom['semantics']['surfaces'][material_index]['type']
+                # create new material
+                new_material = CityMaterial(current_material)
+
+                if geom['texture']['unnamed']['values'][surface_index] != [[None]]:
                     #set texture of material
                     new_material.setTexture(data, texture_index, filepath)
+                    # go to next index in the texture-appearances
                     texture_index += 1
+
                 else:
                     # set color of material
-                    new_material.setColor(surface['type'])
+                    ft = FeatureTypes()
+                    color = ft.getRGBColor(obj['type'], current_material)
+                    new_material.setColor(color)
+                    #print("material: " +str(current_material)+" has been added!" )
+                    #print("surface: "+ str(surface_index))
+                    #print("material: "+ str(material_index))
+                    #print("#####")
+
                 # set custom property "type"
-                new_material.addCustomProperty("type",surface['type'])
-                mats.append(new_material.material)  
-
-        """
-
+                new_material.addCustomStringProperty("CJEMtype",current_material)
+                # put the material in the correct position in the mats array so that the links declared in "values" are followed 
+                mats[geom['semantics']['values'][surface_index]] = new_material.material
 
         ###############
 
@@ -188,22 +174,26 @@ class CityJSONParser:
                                       mats,
                                       values)
 
-        if 'lod' in geom:
-            geom_obj['lod'] = geom['lod']
+        # UV Mapping of the textures
+        uvMapping(geom_obj,self.data, geom)
 
-        geom_obj['type'] = geom['type']
+        try:
+            geom_obj['CJEOtype'] = geom['type']
+            geom_obj['CJEOlod'] = geom['lod']
+        except:
+            print("The Imported File doesn't contain TYPE and LOD of the geometry!")
+        
 
         return geom_obj
 
     def execute(self):
         """Execute the import process"""
 
-        if self.clear_scene:
-            common_setup()
-            remove_all_materials()
-            remove_scene_objects()
-            
-            
+        common_setup()
+        remove_all_materials()
+        remove_scene_objects()
+        
+
         print("\nImporting CityJSON file...")
 
         self.load_data()
@@ -223,7 +213,7 @@ class CityJSONParser:
         progress = 0
         start_import = time.time()
 
-        # Creating empty meshes for every CityObjects and linking its
+        # Creating empty meshes for every CityObject and linking its
         # geometries as children-meshes
         for objid, obj in self.data['CityObjects'].items():
             cityobject = create_empty_object(objid)
@@ -235,8 +225,14 @@ class CityJSONParser:
             for i, geom in enumerate(obj['geometry']):
                 data = self.data
                 geom_obj = self.parse_geometry(objid, obj, geom, i, data, self.filepath)
+                ###
+                # temporary (working) solution for reading the Object/Building type
+                geom_obj['CJEOconstruction'] = obj['type']
+                ###
                 geom_obj.parent = cityobject
                 new_objects.append(geom_obj)
+
+           
 
             progress += 1
             print("Importing: {percent}% completed"
@@ -304,27 +300,6 @@ class CityJSONExporter:
             }
         return empty_json
 
-    def get_custom_properties(self,city_object,init_json,CityObject_id):
-        """Creates the required structure according to CityJSON and writes all the object's custom properties (aka attributes)"""
-        init_json["CityObjects"].setdefault(CityObject_id,{})
-        init_json["CityObjects"][CityObject_id].setdefault('geometry',[])
-        cp=city_object.items()
-        for prop in cp:
-            # When a new empty object is added by user, Blender assigns some built in properties at the first index of the property list. 
-            # With this it is bypassed and continues to the actual properties of the object                
-            if prop[0]=="_RNA_UI":
-                continue  
-            # Upon import into Blender the for every level deeper an attribute is nested the more a "." is used in the string between the 2 attributes' names
-            # So to store it back to the original form the concatenated string must be split. 
-            # Split is the list containing the original attributes names.
-            split = prop[0].split(".") 
-            # Check if the attribute is IDPropertyArray and convert to python list type because JSON encoder cannot handle type IDPropertyArray.
-            if isinstance(prop[1],idprop.types.IDPropertyArray):
-                attribute=prop[1].to_list()
-            else:
-                attribute=prop[1]
-            export_attributes(split,init_json,CityObject_id,attribute)
-
     def create_mesh_structure(self,city_object,objid,init_json):
         "Prepares the structure within the empty mesh for storing the geometries, stored the lod and accesses the vertices and faces of the geometry within Blender"
         #Create geometry key within the empty object for storing the LoD(s) 
@@ -332,8 +307,8 @@ class CityJSONExporter:
         init_json["CityObjects"].setdefault(CityObject_id,{})
         init_json["CityObjects"][CityObject_id].setdefault('geometry',[])
         #Check if the user has assigned the custom properties 'lod' and 'type' correctly 
-        if ('lod' in city_object.keys() and (type(city_object['lod']) == float or type(city_object['lod'])==int) ):
-            if ('type' in city_object.keys() and (city_object['type'] == "MultiSurface" or city_object['type'] == "CompositeSurface" or city_object['type'] == "Solid")):
+        if ('CJEOlod' in city_object.keys() and (type(city_object['CJEOlod']) == float or type(city_object['CJEOlod'])==int) ):
+            if ('CJEOtype' in city_object.keys() and (city_object['CJEOtype'] == "MultiSurface" or city_object['CJEOtype'] == "CompositeSurface" or city_object['CJEOtype'] == "Solid")):
                 #Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra keys (within_geometry) to store it.
                 #Otherwise just create the rest of the tags
                 if city_object.data.materials:
@@ -341,14 +316,14 @@ class CityJSONExporter:
                     if 'theme' in bpy.context.scene.world:
                         themeName =  bpy.context.scene.world["theme"]
                     #init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': [[]]},'texture':{},'lod':city_object['lod']})  ##Auskommentiert von Tim
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}},'lod':city_object['lod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'lod':city_object['CJEOlod'],'boundaries':[],'semantics':{'surfaces': [], 'values': []},'texture':{themeName:{'values':[]}}})
                 else:
-                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['type'],'boundaries':[],'lod':city_object['lod']})
+                    init_json["CityObjects"][CityObject_id]['geometry'].append({'type':city_object['CJEOtype'],'lod':city_object['CJEOlod'],'boundaries':[]})
             else:
-                print ("You either forgot to add `type` as a custom property of the geometry, ", name, ", or 'type' is not `MultiSurface`,`CompositeSurface` or `Solid`")
+                print ("You either forgot to add `type` as a custom property of the geometry, ", city_object.data.name, ", or 'type' is not `MultiSurface`,`CompositeSurface` or `Solid`")
                 sys.exit(None)
         else:
-            print ("You either forgot to add `lod` as a custom property of the geometry, ", name, ", or 'lod' is not a number")
+            print ("You either forgot to add `lod` as a custom property of the geometry, ", city_object.data.name, ", or 'lod' is not a number")
             sys.exit(None)
             
         #Accessing object's vertices 
@@ -391,7 +366,7 @@ class CityJSONExporter:
 
         # Create semantic surfaces
         semantic_surfaces = store_semantic_surfaces(init_json, city_object, index, CityObject_id)
-        if city_object['type'] == 'MultiSurface' or city_object['type'] == 'CompositeSurface':
+        if city_object['CJEOtype'] == 'MultiSurface' or city_object['CJEOtype'] == 'CompositeSurface':
             
             ##### Texture Export ####  
             
@@ -403,13 +378,16 @@ class CityJSONExporter:
             for material_slot in city_object.material_slots:
                 # Only try to build an appearance if there actually is a texture used in this material
                 # which can be checked by the existence of more than 2 nodes
-                if (len(material_slot.material.node_tree.nodes))>2:
-                    image_basename = material_slot.material.node_tree.nodes[2].image.name
-                    init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
-                    # add index of the material with a texture to the list of such materials
-                    materials_with_texture.append(material_index)
-                # increase the material index
-                material_index += 1
+                try:
+                    if (len(material_slot.material.node_tree.nodes))>2:
+                        image_basename = material_slot.material.node_tree.nodes['Image Texture'].image.name
+                        init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
+                        # add index of the material with a texture to the list of such materials
+                        materials_with_texture.append(material_index)
+                    # increase the material index
+                    material_index += 1
+                except:
+                    pass
             #########################
 
             # Browsing through faces and their vertices of every object.
@@ -471,7 +449,7 @@ class CityJSONExporter:
                 link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
 
 
-        if city_object['type'] == 'Solid':
+        if city_object['CJEOtype'] == 'Solid':
 
             init_json["CityObjects"][CityObject_id]["geometry"][index]["boundaries"].append([])
             for face in object_faces:
@@ -492,6 +470,13 @@ class CityJSONExporter:
                 link_face_semantic_surface(init_json, city_object, index, CityObject_id, semantic_surfaces, face)
         return cj_next_index
 
+    def create_custom_property(self, objid,city_object,init_json, property_name, property_name_in_blender):
+        "Creates a property of the CityObject in the JSON Export"
+        CityObject_id = objid.split(' ')[2]
+        value = city_object[property_name_in_blender]
+        init_json["CityObjects"].setdefault(CityObject_id,{})
+        init_json["CityObjects"][CityObject_id].update({property_name:value})
+
     def execute(self):
         start=time.time()
         print("\nExporting Blender scene into CityJSON file...")
@@ -511,11 +496,7 @@ class CityJSONExporter:
 
         for city_object in bpy.data.objects:
             #Get object's name
-            objid = city_object.name
-            #Empty objects have all the attributes so their properties are accessed to extract this information
-            if city_object.type=='EMPTY':
-                #Get all the custom properties of the object
-                self.get_custom_properties(city_object,init_json,objid)                       
+            objid = city_object.name                     
             #If the object is MESH means that is an actual geometry contained in the CityJSON file
             if city_object.type =='MESH':
                 """ Export geometries with their semantics into CityJSON
@@ -523,8 +504,14 @@ class CityJSONExporter:
                     In case the object has semantics they are accordingly stored as well using the 'store_semantics' function
                     Case of multisolid hasn't been taken under consideration!!
                 """
+
                 #Creating the structure for storing the geometries and get the initial ID of the CityObject its vertices and its faces
                 CityObject_id,object_verts,object_faces = self.create_mesh_structure(city_object,objid,init_json)
+
+                #Create the "type" property of the CityObject
+                property_name = 'type'
+                property_name_in_blender = 'CJEOconstruction'
+                self.create_custom_property(objid,city_object,init_json,property_name, property_name_in_blender)
 
                 #Exporting geometry and semantics. CityJSON vertices_index is returned so it can be re-fed into the function at the correct point.
                 cj_next_index = self.export_geometry_and_semantics(city_object,init_json,CityObject_id,object_faces,
@@ -554,6 +541,11 @@ class CityJSONExporter:
                     
                     fileInfosTarget =self.filepath.split('\\')
                     folderTarget =self.filepath.replace(fileInfosTarget[ len(fileInfosTarget) - 1 ],"")
+
+                    print("baseFolder: "+str(baseFolder))
+                    print("folderSource: "+str(folderSource))
+                    print("fileSourceName: "+str(fileSourceName))
+
                 
                     src_path = baseFolder + folderSource.replace("//","") + fileSourceName
                     dst_path = folderTarget + r"appearance\\" + fileSourceName

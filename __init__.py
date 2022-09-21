@@ -1,6 +1,7 @@
 """Main module of the CityJSON Blender addon"""
 
 import json
+from multiprocessing.sharedctypes import Value
 import time
 import bpy
 
@@ -14,7 +15,7 @@ from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject
 bl_info = {
     "name": "CityJSONEditor",
     "author": "Konstantinos Mastorakis, Tim Balschmiter, Hagen Schoenkaese",
-    "version": (0, 9, 0),
+    "version": (1, 0, 0),
     "blender": (3, 2, 2),
     "location": "File > Import > CityJSON (.json) || File > Export > CityJSON (.json)",
     "description": "Visualize, edit and export 3D structures encoded in CityJSON format",
@@ -36,7 +37,8 @@ class ImportCityJSON(Operator, ImportHelper):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
-
+    
+    """
     material_type: EnumProperty(
         name="Materials' type",
         items=(('SURFACES', "Surfaces",
@@ -59,15 +61,17 @@ class ImportCityJSON(Operator, ImportHelper):
         name="Clean scene",
         description="Remove existing objects from the scene before importing",
         default=True
-    )
+    )"""
 
     def execute(self, context):
         """Executes the import process"""
 
-        parser = CityJSONParser(self.filepath,
+        """parser = CityJSONParser(self.filepath,
                                 material_type=self.material_type,
                                 reuse_materials=self.reuse_materials,
-                                clear_scene=self.clean_scene)
+                                clear_scene=self.clean_scene)"""
+
+        parser = CityJSONParser(self.filepath)
 
         return parser.execute()
 
@@ -130,12 +134,17 @@ class SetAttributes(bpy.types.Operator):
     def execute(self,context):
         print('settng Attributes...')
         obj = CityObject.CityObject(bpy.context.active_object)
-        #obj.addCustomProperty()
         for attr in CityObject.CityObjectProps.__dict__.keys():
             print(attr)
+            # initialize attributes
             if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
                 print("Attr existiert nicht")
                 obj.addCustomProperty(attr)
+
+            # set attribute-values of selected Object (default values) so they show up in UI
+            if attr.startswith('CJEO'):
+                value = getattr(bpy.context.active_object, attr)
+                obj.setCustomProperty(attr, value)
 
         print('finished setting attributes...')
         return {'FINISHED'} 
@@ -198,7 +207,6 @@ def objectmenu_func(self, context):
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
-   
 
 def register():
     """Registers the classes and functions of the addon"""
@@ -214,7 +222,11 @@ def register():
     #add menu to object mod
     bpy.types.VIEW3D_MT_object.append(objectmenu_func)
     bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
-    bpy.types.PreferencesView.show_developer_ui = True
+
+    #bpy.types.Material.my_settings = bpy.props.PointerProperty(type=MaterialProps)
+    #bpy.types.Object.my_settings = bpy.props.PointerProperty(type=MaterialProps)
+    #print(bpy.types.Object.my_settings)
+
     
 def unregister():
     """Unregisters the classes and functions of the addon"""

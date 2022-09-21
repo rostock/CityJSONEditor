@@ -4,7 +4,8 @@ This modules provides utitily methods for the importing/exporting
 processing of CityJSON files
 """
 
-import bpy, idprop
+from tokenize import String
+import bpy, idprop, bmesh
 
 
 ########## Importer functions ##########
@@ -49,15 +50,6 @@ def remove_scene_objects():
         bpy.data.collections.remove(collection)
     print("scene has been cleared!")
     print("#####")
-
-def clean_list(values):
-    """Creates a list of non list in case lists nested in lists exist"""
-
-    while isinstance(values[0], list):
-        values = values[0]
-
-    return values
-
 
 def assign_properties(obj, props, prefix=[]):
     """Assigns the custom properties to obj based on the props"""
@@ -153,6 +145,7 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
         mesh_data = bpy.data.meshes.new(name)
 
         for material in materials:
+            print(material.name)
             mesh_data.materials.append(material)
 
         indices = [i for face in faces for i in face]
@@ -174,6 +167,7 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
         mesh_data.loops.foreach_set("vertex_index", indices)
         mesh_data.polygons.foreach_set("loop_start", loop_starts)
         mesh_data.polygons.foreach_set("loop_total", loop_totals)
+        print(material_indices)
         if len(material_indices) == len(faces):
             mesh_data.polygons.foreach_set("material_index", material_indices)
         elif len(material_indices) > len(faces):
@@ -186,7 +180,38 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 
     new_object = bpy.data.objects.new(name, mesh_data)
 
+
     return new_object
+
+def uvMapping(object, data, geom):
+    # uv coordinates from json file
+    uv_coords = data['appearance']['vertices-texture']
+    # all data from the json file
+    mesh_data = object.data
+    # create a new uv layer
+    # this uv-unwraps all faces even if they don't have a texture (is irrelevent though)
+    uv_layer = mesh_data.uv_layers.new()
+    # set the new uv layer as the active layer
+    mesh_data.uv_layers.active = uv_layer
+
+    # iterate through faces
+    for face_index, face in enumerate(geom['texture']['unnamed']['values']):
+        # if the face has a texture (texture reference is not none)
+        if face != [[None]]:
+            # get the polygon/face from the newly created mesh
+            poly = mesh_data.polygons[face_index]
+            # iterate trough the mesh-loops of the polygon/face
+            for vert_idx, loop_idx in enumerate(poly.loop_indices):
+                # get the index of the uv that belongs to the vertex of the face
+                # this is mapped using the values in the geom['texture']['unnamed']['values'], where the value at index 0 is the 
+                # index of the cooresponding texture-appearance, which means that the index of the vertex has to be increased by 1
+                texture_map_value = face[0][vert_idx+1]
+                # set UVs of the uv-layer using the texture_map_value as index for the list in the json data
+                uv_layer.data[loop_idx].uv = (uv_coords[texture_map_value][0],uv_coords[texture_map_value][1])
+        
+        # if there is no texture --> do nothing  
+        else:
+            pass
 
 
 def get_collection(collection_name):
@@ -440,28 +465,5 @@ def export_parent_child(init_json):
             # Create the "parents" tag below the children's ID and assign to it the parent's name
             init_json["CityObjects"][city_object.name].update({'parents': []})
             init_json["CityObjects"][city_object.name]['parents'].append(parents_id)
-
-    return None
-
-
-def export_attributes(split, init_json, CityObject_Id, attribute):
-    """ Storing the attributes back to the dictionary. 
-        The following code works only up to 3 levels of nested attributes
-        TODO Future suggestion: Make a function out of this that works for any level of nested attributes."""
-    if len(split) == 3:
-        if not (split[0] in init_json["CityObjects"][CityObject_Id]):
-            init_json["CityObjects"][CityObject_Id].update({split[0]: {}})
-        if not (split[1] in init_json["CityObjects"][CityObject_Id][split[0]]):
-            init_json["CityObjects"][CityObject_Id][split[0]].update({split[1]: {}})
-        if not (split[2] in init_json["CityObjects"][CityObject_Id][split[0]][split[1]]):
-            init_json["CityObjects"][CityObject_Id][split[0]][split[1]].update({split[2]: attribute})
-    elif len(split) == 2:
-        if not (split[0] in init_json["CityObjects"][CityObject_Id]):
-            init_json["CityObjects"][CityObject_Id].update({split[0]: {}})
-        if not (split[1] in init_json["CityObjects"][CityObject_Id][split[0]]):
-            init_json["CityObjects"][CityObject_Id][split[0]].update({split[1]: attribute})
-    elif len(split) == 1:
-        if not (split[0] in init_json["CityObjects"][CityObject_Id]):
-            init_json["CityObjects"][CityObject_Id].update({split[0]: attribute})
 
     return None

@@ -81,7 +81,6 @@ class SetTypeOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-        #    obj.addCustomStringProperty('CBOtype',self.type)
         obj.setCustomProperty('CJEOtype',self.CJEOtype)
         return {'FINISHED'} 
 
@@ -95,6 +94,5 @@ class SetConstructionOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = CityObject(bpy.context.active_object)
-    #    obj.addCustomStringProperty('CBOconstruction',self.construction)
         obj.setCustomProperty('CJEOconstruction',self.CJEOconstruction)
         return {'FINISHED'} 
