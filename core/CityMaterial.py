@@ -16,8 +16,9 @@ class CityMaterial:
 
     def deleteMaterial(self, obj=None, matIndex=None):
         bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.material_slot_remove_unused() #Funktioniert nicht, dadurch ist der Slot noch gefüllt
         bpy.data.materials.remove(self.material) # Funktioniert
+        #bpy.ops.object.material_slot_remove_unused() #Funktioniert nicht, dadurch ist der Slot noch gefüllt
+        #bpy.ops.object.material_slot_remove(self.material)
         bpy.ops.object.mode_set(mode='EDIT')
     
     def addCustomStringProperty(self, customLabel, value):

@@ -436,13 +436,16 @@ class CityJSONExporter:
             for material_slot in city_object.material_slots:
                 # Only try to build an appearance if there actually is a texture used in this material
                 # which can be checked by the existence of more than 2 nodes
-                if (len(material_slot.material.node_tree.nodes))>2:
-                    image_basename = material_slot.material.node_tree.nodes['Image Texture'].image.name
-                    init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
-                    # add index of the material with a texture to the list of such materials
-                    materials_with_texture.append(material_index)
-                # increase the material index
-                material_index += 1
+                try:
+                    if (len(material_slot.material.node_tree.nodes))>2:
+                        image_basename = material_slot.material.node_tree.nodes['Image Texture'].image.name
+                        init_json['appearance']['textures'].append(self.create_appearance_item(image_basename))
+                        # add index of the material with a texture to the list of such materials
+                        materials_with_texture.append(material_index)
+                    # increase the material index
+                    material_index += 1
+                except:
+                    pass
             #########################
 
             # Browsing through faces and their vertices of every object.

@@ -43,16 +43,19 @@ class SetSurfaceOperator(bpy.types.Operator):
             obj.update_from_editmode() # Loads edit-mode data into object data
             selected_polygons = [p for p in mesh.polygons if p.select]
             for face in selected_polygons:
-                
-                matOld = CityMaterial(name=None, matIndex=face.material_index, obj=obj)
-                matOld.deleteMaterial(obj=obj, matIndex=face.material_index)
-                del matOld
-                mat = CityMaterial(name=self.surfaceType, matIndex=NULL, obj=NULL)                
+                try:
+                    matOld = CityMaterial(name=None, matIndex=face.material_index, obj=obj)
+                    matOld.deleteMaterial(obj=obj, matIndex=face.material_index)
+                    del matOld
+                except:
+                    print("The Face does not have a Material or the Material has already been removed!")
+                mat = CityMaterial(name=self.surfaceType, matIndex=NULL, obj=NULL)
+                ft = FeatureTypes()
+                color = ft.getRGBColor(obj.CJEOconstruction, self.surfaceType)
+                mat.setColor(color)                
                 mat.addMaterialToObj(obj)
                 mat.addMaterialToFace(obj)
                 mat.addCustomStringProperty('CJEMtype', self.surfaceType)
-                ft = FeatureTypes()
-                color = ft.getRGBColor(obj.CJEOconstruction, self.surfaceType)
-                mat.setColor(color)
+                
       
         return {'FINISHED'}
