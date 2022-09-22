@@ -37,7 +37,7 @@ The addon was developed using:
 - If you are unfamiliar with CityJSON we strongly advise you to first explore the format as you otherwise won't understand the options you will be given by this addon! You can do so on the official [Website](https://www.cityjson.org/).
 
 
-### Importing a 3D city objet
+### Importing a 3D city object
 
 Go to `File > Import > CityJSON (.json)` and navigate to the directory where the `CityJSON` file is stored and open it.
 
@@ -53,7 +53,7 @@ It is also not intendet to import other objects into the scene as the importer c
 
 #### Standard Workflow
 
-- enable `Developer` Extras in the blender preferences to see the custom properties you will add
+- enable `Developer Extras` in the blender preferences to see the custom properties you will add
 
 In order to be able export objects correctly the following steps need to be followed:
 
