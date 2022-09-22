@@ -53,6 +53,8 @@ It is also not intendet to import other objects into the scene as the importer c
 
 #### Standard Workflow
 
+- enable `Developer` Extras in the blender preferences to see the custom properties you will add
+
 In order to be able export objects correctly the following steps need to be followed:
 
 1. In `Object Mode` right-click the object and select the option `set initial attributes`.
