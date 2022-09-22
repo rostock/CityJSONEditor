@@ -1,6 +1,6 @@
 # CityJSONEditor
 
-A Blender add-on to import, edit and export new instances of [CityJSON](http://cityjson.org)-encoded 3D city models. All buildings' levels of detail (LoD), attributes and semantic surfaces are stored and can be accesed via Blender's graphical interface.
+A Blender add-on to import, edit and export new instances of [CityJSON](http://cityjson.org)-encoded 3D city models. All buildings' levels of detail (LoD), attributes and semantic surfaces are stored and can be accessed via Blender's graphical interface.
 
 This Addon has is a fork of Konstantinos Mastorakis's Project `UP3DATE` which can be found [here](https://github.com/cityjson/Up3date). It was further developed and changed to serve the special purpose we had in mind for it. This purpose is to gain a tool for editing the 3D models of individual buildings for our 3D-City-Model, to add more detail and to manually texture buildings of special importance. 
 
@@ -43,29 +43,29 @@ Go to `File > Import > CityJSON (.json)` and navigate to the directory where the
 
 #### Notes
 
-- only one object is intendet to be imported in a file
+- only one object is intended to be imported in a file
 - the import action will delete everything from the scene including the scene itself
 
 ### Editing
 
-This addon is intendet to be used in a way where you, the user, import a CityJSON geometry eg. a ground surface of a building as a first step of any workflow. Blender is not a GIS, so we do not have propper ways of georeferencing objects that have been made in a "standart" .blend file. The importer of the module we based the addon off had a way to deal with large coordinates of CRSs so we used this existing approach. So please always start with some form of a referenced object or otherwise your spend time , creating a detailed Object, goes to waste.
-It is also not intendet to import other objects into the scene as the importer constructs a special semantic, wich is to be upheld in order to be able to export a valid CityJSON file.
+This addon is intended to be used in a way where you, the user, import a CityJSON geometry e.g. a ground surface of a building as a first step of any workflow. Blender is not a GIS, so we do not have proper ways of georeferencing objects that have been made in a "standard" .blend file. The importer of the module we based the addon off had a way to deal with large coordinates of CRSs, so we used this existing approach. So please always start with some form of a referenced object or otherwise your spend time , creating a detailed Object, goes to waste.
+It is also not intended to import other objects into the scene as the importer constructs a special semantic, which is to be upheld in order to be able to export a valid CityJSON file.
 
 #### Standard Workflow
 
 - enable `Developer Extras` in the blender preferences to see the custom properties you will add
 
-In order to be able export objects correctly the following steps need to be followed:
+In order to be able to export objects correctly the following steps need to be followed:
 
 1. In `Object Mode` right-click the object and select the option `set initial attributes`.
 This initializes all the custom properties you will be able to set later. You should always start with this step, even if you import an object you have previously given these attributes. The assigned values will not be overwritten, so no worries there.
 
-2. Now, still in `Object Mode`, you can assign values for LOD (`set LOD`), ObjectType (`set Construction`) and GeometryType (`set Type`). Use the context menus options to do so respectivly. 
+2. Now, still in `Object Mode`, you can assign values for LOD (`set LOD`), ObjectType (`set Construction`) and GeometryType (`set Type`). Use the context menus options to do so respectively. 
 
 3. After you have assigned the `CJEOconstruction` attribute, which declares the Object as a Bridge, Building etc., you can switch into `Edit Mode` to assign SurfaceTypes to your geometry. This is done by selecting a face, right-click to open the context menu and selecting the desired SurfaceType.
 This action will create materials of the corresponding name which have attributes that will be used in the export to CityJSON.
 
-*We advise you to declare a separate material for every surface as we intendet to use this addon for texturing and that capability hinges on having a material for every face.*
+*We advise you to declare a separate material for every surface as we intended to use this addon for texturing and that capability hinges on having a material for every face.*
 
 4. If you wish to add `Textures` you can do so by altering existing materials.  
 
@@ -76,5 +76,4 @@ To export your Object simply go to `File > Export > CityJSON (.json)`.
 
 ## Further Development
 
-We plan to add further functionality to this addon at a later point in time. Plans and issus will be placed in the issues tab of this github repo. 
- 
+We plan to add further functionality to this addon at a later point in time. Plans and issues will be placed in the issues tab of this gitHub repo.
