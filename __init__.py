@@ -15,7 +15,7 @@ from .core import ui, prop, operator, EditMenu, ObjectMenu, CityObject
 bl_info = {
     "name": "CityJSONEditor",
     "author": "Konstantinos Mastorakis, Tim Balschmiter, Hagen Schoenkaese",
-    "version": (1, 0, 0),
+    "version": (1, 0, 1),
     "blender": (3, 2, 2),
     "location": "File > Import > CityJSON (.json) || File > Export > CityJSON (.json)",
     "description": "Visualize, edit and export 3D structures encoded in CityJSON format",
@@ -101,25 +101,6 @@ class ExportCityJSON(Operator, ExportHelper):
         min=0,
         max=12,
     )
-    # single_lod_switch: BoolProperty(
-    #     name="Export single LoD",
-    #     description="Enable to export only a single LoD",
-    #     default=False,
-    #     )
-
-    # export_single_lod: EnumProperty(
-    #     name="Select LoD :",
-    #     items=(('LoD0', "LoD 0",
-    #             "Export only LoD 0"),
-    #         ('LoD1', "LoD 1",
-    #             "Export only LoD 1"),
-    #         ('LoD2', "LoD 2",
-    #             "Export only LoD 2"),
-    #             ),
-    #     description=(
-    #         "Select which LoD should be exported"            
-    #     )
-    # )
     def execute(self, context):
         
         exporter = CityJSONExporter(self.filepath,
@@ -138,7 +119,6 @@ class SetAttributes(bpy.types.Operator):
             print(attr)
             # initialize attributes
             if attr.startswith('CJEO') and not obj.checkAttrExists(attr):
-                print("Attr existiert nicht")
                 obj.addCustomProperty(attr)
 
             # set attribute-values of selected Object (default values) so they show up in UI
@@ -188,7 +168,7 @@ def menu_func_import(self, context):
     """Defines the menu item for CityJSON export"""
     self.layout.operator(ImportCityJSON.bl_idname, text="CityJSON (.json)")
 
-#create submenu in edit modus
+# create submenu in edit mode
 def editmenu_func(self, context):
     is_vert_mode, is_edge_mode, is_face_mode = context.tool_settings.mesh_select_mode
     if is_face_mode:
@@ -201,9 +181,8 @@ def objectmenu_func(self, context):
     layout = self.layout
     layout.separator()
     layout.label(text="CityJSON Options")
-    #hier muss noch eine IF-Anweisung, dass die Funktion nur angezeigt wird, wenn ein verpflichtendes Attribut fehlt
     layout.operator(SetAttributes.bl_idname, text="set initial attributes")
-    layout.operator(GetLOD.bl_idname, text="get LOD")
+    # layout.operator(GetLOD.bl_idname, text="get LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_lod_submenu.bl_idname, text="set LOD")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_type_submenu.bl_idname, text="set Type")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
@@ -213,19 +192,19 @@ def register():
     print("Function: register()")
     for cls in classes:
         bpy.utils.register_class(cls)
-    #bpy.types.Scene.cityjsonfy_properties = bpy.props.PointerProperty(type=prop.UP3DATE_CityjsonfyProperties)
+    # bpy.types.Scene.cityjsonfy_properties = bpy.props.PointerProperty(type=prop.UP3DATE_CityjsonfyProperties)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
-    #add menu to edit mod
+    # add menu to edit mod
     bpy.types.VIEW3D_MT_edit_mesh_faces.append(editmenu_func)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(editmenu_func)
-    #add menu to object mod
+    # add menu to object mod
     bpy.types.VIEW3D_MT_object.append(objectmenu_func)
     bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
 
-    #bpy.types.Material.my_settings = bpy.props.PointerProperty(type=MaterialProps)
-    #bpy.types.Object.my_settings = bpy.props.PointerProperty(type=MaterialProps)
-    #print(bpy.types.Object.my_settings)
+    # bpy.types.Material.my_settings = bpy.props.PointerProperty(type=MaterialProps)
+    # bpy.types.Object.my_settings = bpy.props.PointerProperty(type=MaterialProps)
+    # print(bpy.types.Object.my_settings)
 
     
 def unregister():

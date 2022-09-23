@@ -21,13 +21,21 @@ class FeatureTypes:
                 "lod": [1,2,3,4,5],
                 "color": "#9c4444"
             },
+            #"WallSurface": {
+            #    "lod": [1,2,3,4,5],
+            #    "color": "#dbdbdb"
+            #},
             "WallSurface": {
                 "lod": [1,2,3,4,5],
-                "color": "#dbdbdb"
+                "color": "#FFED75"
             },
+            #"GroundSurface": {
+            #    "lod": [1,2,3,4,5],
+            #    "color": "#747474"
+            #},
             "GroundSurface": {
                 "lod": [1,2,3,4,5],
-                "color": "#747474"
+                "color": "#815317"
             },
             "ClosureSurface": {
                 "lod": [1,2,3,4,5],

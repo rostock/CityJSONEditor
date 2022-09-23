@@ -65,9 +65,9 @@ This initializes all the custom properties you will be able to set later. You sh
 3. After you have assigned the `CJEOconstruction` attribute, which declares the Object as a Bridge, Building etc., you can switch into `Edit Mode` to assign SurfaceTypes to your geometry. This is done by selecting a face, right-click to open the context menu and selecting the desired SurfaceType.
 This action will create materials of the corresponding name which have attributes that will be used in the export to CityJSON.
 
-*We advise you to declare a separate material for every surface as we intended to use this addon for texturing and that capability hinges on having a material for every face.*
+4. If you wish to add `Textures` you can do so by altering existing materials. 
 
-4. If you wish to add `Textures` you can do so by altering existing materials.  
+*We advise you to declare a separate material for every surface as we intended to use this addon for texturing and that capability hinges on having a material for every face.*
 
 ### Exporting a 3D city object
 
