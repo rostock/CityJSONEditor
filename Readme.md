@@ -2,7 +2,7 @@
 
 A Blender add-on to import, edit and export new instances of [CityJSON](http://cityjson.org)-encoded 3D city models. All buildings' levels of detail (LoD), attributes and semantic surfaces are stored and can be accessed via Blender's graphical interface.
 
-This Addon has is a fork of Konstantinos Mastorakis's Project `UP3DATE` which can be found [here](https://github.com/cityjson/Up3date). It was further developed and changed to serve the special purpose we had in mind for it. This purpose is to gain a tool for editing the 3D models of individual buildings for our 3D-City-Model, to add more detail and to manually texture buildings of special importance. 
+This Addon is a fork of Konstantinos Mastorakis's Project `UP3DATE` which can be found [here](https://github.com/cityjson/Up3date). It was further developed and changed to serve the special purpose we had in mind for it. This purpose is to gain a tool for editing the 3D models of individual buildings for our 3D-City-Model, to add more detail and to manually texture buildings of special importance. 
 
 Changes to the original include the addition of support for the import and export of textured models. We also added context menus in both `Object-Mode` and `Edit-Mode` to facilitate easier assignment of SurfaceTypes.
 
@@ -72,6 +72,10 @@ This action will create materials of the corresponding name which have attribute
 ### Exporting a 3D city object
 
 To export your Object simply go to `File > Export > CityJSON (.json)`.
+
+## Video Tutorial
+
+https://youtu.be/t7i318j1Fng
 
 
 ## Further Development
