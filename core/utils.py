@@ -183,7 +183,7 @@ def create_mesh_object(name, vertices, faces, materials=[], material_indices=[])
 
     return new_object
 
-def uvMapping(object, data, geom):
+def uvMapping(object, data, geom, theme_name):
     # uv coordinates from json file
     uv_coords = data['appearance']['vertices-texture']
     # all data from the json file
@@ -195,15 +195,15 @@ def uvMapping(object, data, geom):
     mesh_data.uv_layers.active = uv_layer
 
     # iterate through faces
-    for face_index, face in enumerate(geom['texture']['unnamed']['values']):
+    for face_index, face in enumerate(geom['texture'][theme_name]['values']):
         # if the face has a texture (texture reference is not none)
         if face != [[None]]:
             # get the polygon/face from the newly created mesh
             poly = mesh_data.polygons[face_index]
-            # iterate trough the mesh-loops of the polygon/face
+            # iterate through the mesh-loops of the polygon/face
             for vert_idx, loop_idx in enumerate(poly.loop_indices):
                 # get the index of the uv that belongs to the vertex of the face
-                # this is mapped using the values in the geom['texture']['unnamed']['values'], where the value at index 0 is the 
+                # this is mapped using the values in the geom['texture'][theme_name]['values'], where the value at index 0 is the
                 # index of the cooresponding texture-appearance, which means that the index of the vertex has to be increased by 1
                 texture_map_value = face[0][vert_idx+1]
                 # set UVs of the uv-layer using the texture_map_value as index for the list in the json data

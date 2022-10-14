@@ -135,7 +135,10 @@ class CityJSONParser:
                 # create new material
                 new_material = CityMaterial(current_material)
 
-                if geom['texture']['unnamed']['values'][surface_index] != [[None]]:
+                theme_names = list(geom['texture'].keys())
+                theme_name = theme_names[0]
+
+                if geom['texture'][theme_name]['values'][surface_index] != [[None]]:
                     # set texture of material
                     new_material.setTexture(data, texture_index, filepath)
                     # go to next index in the texture-appearances
@@ -152,7 +155,7 @@ class CityJSONParser:
                 # put the material in the correct position in the mats array so that the links declared in "values" are followed 
                 mats[geom['semantics']['values'][surface_index]] = new_material.material
 
-        ###############
+        ###############b
 
         geom_obj = create_mesh_object(get_geometry_name(theid, geom, index),
                                       temp_vertices,
@@ -161,7 +164,7 @@ class CityJSONParser:
                                       values)
         try:
             # UV Mapping of the textures
-            uvMapping(geom_obj,self.data, geom)
+            uvMapping(geom_obj,self.data, geom, theme_name)
         except:
             print("UV Mapping was not possible because the CityJSON file does not contain appearances!")
 
@@ -298,7 +301,7 @@ class CityJSONExporter:
                 # Check if object has materials (in Blender) i.e semantics in real life and if yes create the extra keys (within_geometry) to store it.
                 # Otherwise just create the rest of the tags
                 if city_object.data.materials:
-                    themeName = 'unnamed'
+                    themeName = 'default'
                     if 'theme' in bpy.context.scene.world:
                         themeName =  bpy.context.scene.world["theme"]
 
@@ -382,24 +385,24 @@ class CityJSONExporter:
                 
                 ##### Texture Export ####
                 # Building JSON-Structure for UV-Mapping
-                init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"].append([[]])
+                init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["default"]["values"].append([[]])
 
                 # ID of the material of the currently processed face
                 face_material = face.material_index
 
-                # Write the index of the appearance in texture>unnamed>values
+                # Write the index of the appearance in texture>default>values
                 # Face has a texture
                 if face_material in materials_with_texture:
                     
                     # get the future index of the appearance (Texture) as it will be in the CityJSON file
                     future_material_index = materials_with_texture.index(face_material)
                     # Appending the ID of the corresponding appearance as first parameter (mapping material/texture to face UV-Coordinates)
-                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(future_material_index)
+                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["default"]["values"][face.index][0].append(future_material_index)
 
                 # Face does not have a texture
                 else:
                     # if there is no texture for this face append null-value instead
-                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(None)
+                    init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["default"]["values"][face.index][0].append(None)
 
                 # Vertex Loop 
                 for i in range(len(object_faces[face.index].vertices)):
@@ -423,7 +426,7 @@ class CityJSONExporter:
                         # Store UV - Coordinates
                         init_json['appearance']['vertices-texture'].append(self.create_texture_vertex(uv_layer[cj_next_index].uv))
                         # Store UV - Mapping (UV Coordinates to Faces)
-                        init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["unnamed"]["values"][face.index][0].append(uv_index)
+                        init_json["CityObjects"][CityObject_id]["geometry"][index]["texture"]["default"]["values"][face.index][0].append(uv_index)
                         # increase the uv_index, which represents the uv-point index in the appearance of the CityJSON
                         uv_index += 1
                 #########################
