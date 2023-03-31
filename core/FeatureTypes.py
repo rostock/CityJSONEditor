@@ -149,17 +149,7 @@ class FeatureTypes:
             }
         }
     }
-
-    def getAllElementsOfFeatureType(self, type):
-        return self.featuretypes[type]
-
-    def getAllLODs(self):
-        pass
-
-    def getAllFeatures(self):
-        print(list(self.featuretypes))
-        return list(self.featuretypes)
-    
+   
     def getRGBColor(self, construction, surface):
         rgb = self.hexToRGB(self.featuretypes[construction][surface]["color"])
         return rgb
