@@ -25,7 +25,10 @@ class Material:
         # File to be imported
         self.filepath = filepath
         # appearance section of the CityJSON file
-        self.appearances = rawObjectData["appearance"]
+        try:
+            self.appearances = rawObjectData["appearance"]
+        except:
+            pass
         # geometry property of the current object
         self.geometry = geometry
 

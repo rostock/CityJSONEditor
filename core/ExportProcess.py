@@ -86,6 +86,5 @@ class ExportProcess:
         self.getMetadata()
         self.getTransform()
         self.createCityObject()
-        #self.getVertices()
         self.getTextures()
         print(self.jsonExport)
