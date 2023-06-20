@@ -1,4 +1,5 @@
 import bpy
+import numpy
 from .Mesh import Mesh
 from.Material import Material
 
@@ -34,6 +35,8 @@ class ImportCityObject:
     def createObject(self, mesh):
         # create a new object with the stored mesh
         newObj = bpy.data.objects.new(self.objectID, mesh)
+        # create a custom property of the object to save its type
+        newObj['cityJSONType'] = self.objectType
         # get the collection with the title "Collection"
         collection = bpy.data.collections.get("Collection")
         # add the new object to the collection
@@ -99,9 +102,24 @@ class ImportCityObject:
             print("UV Mapping was not possible because the CityJSON file does not contain appearances!")
 
 class ExportCityObject:
-    def __init__(self, object):
+    def __init__(self, object, lastVertexIndex, jsonExport, textureSetting):
         self.object = object
         self.vertices = []
+        self.objID = self.object.name
+        self.objType = self.object['cityJSONType']
+        self.maxValue = ""
+        self.offsetArray = [bpy.context.scene.world['X_Origin'],bpy.context.scene.world['Y_Origin'],bpy.context.scene.world['Z_Origin']]
+        self.objGeoExtent = []
+        self.json = {}
+        self.geometry = []
+        self.lastVertexIndex = lastVertexIndex
+        self.semanticValues = []
+        self.scalefactor = 0.001
+        self.jsonExport = jsonExport
+        self.textureValues = []
+        self.textureSetting = textureSetting
+        self.counter = 0
+
 
     def getVertices(self):
         vertexArray = []
@@ -114,7 +132,95 @@ class ExportCityObject:
             vertexJSON.append(vertexCoordinates[2])
             vertexArray.append(vertexJSON)
         self.vertices = vertexArray
-        
 
+    def getObjectExtend(self):
+        objGeoExtend = []
+        vertices = numpy.asarray(self.vertices)
+        maxValue = vertices.max(axis=0, keepdims=True)[0]
+        maxValue = maxValue+self.offsetArray
+        minValue = vertices.min(axis=0, keepdims=True)[0]
+        minValue = minValue+self.offsetArray
+        for i in minValue:
+            objGeoExtend.append(round(i,3))
+        for i in maxValue:
+            objGeoExtend.append(round(i,3))
+        self.objGeoExtent = objGeoExtend
+
+    def getBoundaries(self):
+        # get the mesh by name
+        mesh = bpy.data.meshes[self.objID]
+        boundaries = []
+        # iterate through polygons
+        for poly in mesh.polygons:
+            loop = []
+            # iterate through loops inside polygons
+            for loop_index in poly.loop_indices:
+                vertexIndex = mesh.loops[loop_index].vertex_index
+                vertexValue = []
+                vertexValue.append(mesh.vertices[vertexIndex].co[0])
+                vertexValue.append(mesh.vertices[vertexIndex].co[1])
+                vertexValue.append(mesh.vertices[vertexIndex].co[2])
+                exportIndex = self.vertices.index(vertexValue)
+                loop.append(exportIndex+self.lastVertexIndex)
+            boundaries.append([loop])
+        maxVertex = max(max([max(i) for i in boundaries]))
+        self.lastVertexIndex = maxVertex
+        self.geometry = [{
+            "type": "Solid",
+            "boundaries" : [boundaries]
+        }]
+
+    def getSemantics(self):
+        mesh = bpy.data.meshes[self.objID]
+        self.semanticValues = []
+        self.semanticSurfaces =[]
+        # iterate through polygons
+        for polyIndex, poly  in enumerate(mesh.polygons):
+            # semantic: material of the surface which is also contains the semantic information regarding the surface type
+            semantic = poly.material_index
+            self.semanticValues.append(semantic)
+            semanticSurface = mesh.materials[semantic]['CJEOtype']
+            self.semanticSurfaces.append({"type": semanticSurface})
+            if self.textureSetting:
+                # extract uv mapping
+                self.getTextureMapping(mesh, poly, semantic, polyIndex)
+    
+    def getTextureMapping(self, mesh, poly, semantic, polyIndex):
+        #check if face has texture
+        if len(mesh.materials[semantic].node_tree.nodes) > 2:
+            print(str(polyIndex) + " has texture!")
+            face_material = semantic - self.counter
+            # number of loops in the polygon (is equal to vertices)
+            loopTotal = poly.loop_total
+            uv_layer = mesh.uv_layers[0].data
+            uvList = self.jsonExport['appearance']['vertices-texture']
+            self.textureValues.append([[face_material]])
+
+            for loop_index in range(poly.loop_start, poly.loop_start + loopTotal):
+                uv = uv_layer[loop_index].uv
+                u = uv[0]
+                v = uv[1]
+                vertices_textureJSON = [round(u,7),
+                                        round(v,7)]
+                uv_index = uvList.index(vertices_textureJSON)
+                self.textureValues[polyIndex][0].append(uv_index) 
+        else:
+            print(str(polyIndex) + " does NOT have texture!")
+            self.textureValues.append([[None]])
+            self.counter =+ 1
+
+    def createJSON(self):
+        self.json = {self.objID : {"geographicalExtent" : self.objGeoExtent}}
+        self.json[self.objID].update({"type": self.objType})
+        self.geometry[0].update({"semantics" : {"values" : [self.semanticValues],"surfaces" : self.semanticSurfaces}})
+        if self.textureSetting: 
+            self.geometry[0].update({"texture" : {"default" : { "values" : [self.textureValues] }}})
+        self.json[self.objID].update({"geometry" : self.geometry})
+        
     def execute(self):
         self.getVertices()
+        self.getObjectExtend()
+        self.getBoundaries()
+        self.getSemantics()
+        self.createJSON()
+        

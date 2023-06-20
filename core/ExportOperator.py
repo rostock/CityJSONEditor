@@ -19,6 +19,13 @@ class ExportCityJSON(Operator, ExportHelper):
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
 
+    # List of Operator properties
+    texture_setting: BoolProperty(
+        name="Export Textures",
+        description="Choose if textures present in blender should be exported to the CityJSON file",
+        default=True,
+    )
+
     def execute(self, context):
-        CityJSONExport = ExportProcess(self.filepath)
+        CityJSONExport = ExportProcess(self.filepath, self.texture_setting)
         return CityJSONExport.execute()

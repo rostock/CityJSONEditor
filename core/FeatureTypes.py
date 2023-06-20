@@ -1,5 +1,79 @@
 class FeatureTypes:
     featuretypes = {
+        "BuildingPart": {
+            "Building": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "BuildingPart": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "BuildingInstallation": {
+                "lod": [1,2,3,4,5],
+                "color": "#ae825a"
+            },
+            "IntBuildingInstallation": {
+                "lod": [1,2,3,4,5],
+                "color": "#ae825a"
+            },
+            "RoofSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#9c4444"
+            },
+            #"WallSurface": {
+            #    "lod": [1,2,3,4,5],
+            #    "color": "#dbdbdb"
+            #},
+            "WallSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#FFED75"
+            },
+            #"GroundSurface": {
+            #    "lod": [1,2,3,4,5],
+            #    "color": "#747474"
+            #},
+            "GroundSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#815317"
+            },
+            "ClosureSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "FloorSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "OuterFloorSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#854c7b"
+            },
+            "CeilingSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#ffffff"
+            },
+            "OuterCeilingSurface": {
+                "lod": [1,2,3,4,5],
+                "color": "#7e7d54"
+            },
+            "Door": {
+                "lod": [4,5],
+                "color": "#4d4de8"
+            },
+            "Window": {
+                "lod": [4,5],
+                "color": "#80c7c8"
+            },
+            "Room": {
+                "lod": [5],
+                "color": "#ffffff"
+            },
+            "BuildingFurniture": {
+                "lod": [5],
+                "color": "#ffffff"
+            },
+        },
         "Building": {
             "Building": {
                 "lod": [1,2,3,4,5],
