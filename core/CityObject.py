@@ -102,7 +102,7 @@ class ImportCityObject:
             print("UV Mapping was not possible because the CityJSON file does not contain appearances!")
 
 class ExportCityObject:
-    def __init__(self, object, lastVertexIndex, jsonExport, textureSetting):
+    def __init__(self, object, lastVertexIndex, jsonExport, textureSetting, textureReferenceList):
         self.object = object
         self.vertices = []
         self.objID = self.object.name
@@ -119,6 +119,7 @@ class ExportCityObject:
         self.textureValues = []
         self.textureSetting = textureSetting
         self.counter = 0
+        self.textureReferenceList = textureReferenceList
 
 
     def getVertices(self):
@@ -189,12 +190,19 @@ class ExportCityObject:
         #check if face has texture
         if len(mesh.materials[semantic].node_tree.nodes) > 2:
             print(str(polyIndex) + " has texture!")
-            face_material = semantic - self.counter
+            #face_material = semantic - self.counter
+
+            # index of texture in appearances section of CityJSON
+            # name of the image of the material
+            faceMaterial = mesh.materials[semantic].node_tree.nodes['Image Texture'].image.name
+            textureIndex =  self.textureReferenceList.index(faceMaterial)
+
             # number of loops in the polygon (is equal to vertices)
             loopTotal = poly.loop_total
             uv_layer = mesh.uv_layers[0].data
             uvList = self.jsonExport['appearance']['vertices-texture']
-            self.textureValues.append([[face_material]])
+            #self.textureValues.append([[face_material]])
+            self.textureValues.append([[textureIndex]])
 
             for loop_index in range(poly.loop_start, poly.loop_start + loopTotal):
                 uv = uv_layer[loop_index].uv

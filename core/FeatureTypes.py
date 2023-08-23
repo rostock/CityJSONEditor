@@ -237,3 +237,10 @@ class FeatureTypes:
         rgb_list[2] = rgb[2]/255
         rgb = tuple(rgb_list)
         return rgb
+    
+    def getAllElementsOfFeatureType(self, type):
+        return self.featuretypes[type]
+    
+    def getAllFeatures(self):
+        #print(list(self.featuretypes))
+        return list(self.featuretypes)

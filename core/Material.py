@@ -107,6 +107,18 @@ class Material:
         # the objects material of index: "surfaceValue"
         bpy.data.meshes[self.objectID].polygons[surfaceIndex].material_index = surfaceValue   
 
+    # Methods for use in edit-mode context menu
+
+    def addMaterialToFace(self, index, faceIndex):
+        #materialSlot = bpy.context.object.material_slots.find(str(self.objectID)+"_"+str(self.type))
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.context.object.data.polygons[faceIndex].select = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        materialSlot = index
+        bpy.context.object.active_material_index = materialSlot
+        bpy.ops.object.material_slot_assign()
+        bpy.ops.mesh.select_all(action='DESELECT')
+
     def execute(self):
         self.createMaterial()
         # use the corresponding function for the objects appearance according to the presence of a texture

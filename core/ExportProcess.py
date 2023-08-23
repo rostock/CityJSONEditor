@@ -12,6 +12,7 @@ class ExportProcess:
         # True - export textures
         # False - do not export textures
         self.textureSetting = textureSetting
+        self.textureReferenceList = []
 
     def createJSONStruct(self):
         if self.textureSetting: 
@@ -82,6 +83,7 @@ class ExportProcess:
                     ]
                 }
                 self.jsonExport['appearance']['textures'].append(textureJSON)
+                self.textureReferenceList.append(basename)
                 self.exportTextures(texture)
 
     def getVerticesTexture(self):
@@ -109,7 +111,7 @@ class ExportProcess:
         lastVertexIndex = 0
         for object in blendObjects:
             print("Create Export-Object: "+object.name)
-            cityobj = ExportCityObject(object, lastVertexIndex, self.jsonExport, self.textureSetting)
+            cityobj = ExportCityObject(object, lastVertexIndex, self.jsonExport, self.textureSetting, self.textureReferenceList)
             cityobj.execute()
             for vertex in cityobj.vertices:
                 vertex[0] = round(vertex[0]/0.001)
