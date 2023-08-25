@@ -3,6 +3,7 @@ from types import NoneType
 import bpy
 from .FeatureTypes import FeatureTypes
 from .Material import Material
+import math
 
 class VIEW3D_MT_cityedit_mesh_context_submenu(bpy.types.Menu):
     bl_label = 'SurfaceTypes'
@@ -36,19 +37,13 @@ class SetSurfaceOperator(bpy.types.Operator):
             mesh = obj.data # Assumed that obj.type == 'MESH'
             obj.update_from_editmode() # Loads edit-mode data into object data
             selected_polygons = [p for p in mesh.polygons if p.select]
-            for face in selected_polygons:
+            for faceindex, face in enumerate(selected_polygons):
                 bpy.ops.object.mode_set(mode='OBJECT')
+                materialSlot = face.material_index
                 try:
                     print(face.material_index)
-                    bpy.data.materials.remove(bpy.context.object.active_material)
+                    #bpy.data.materials.remove(bpy.context.object.active_material)
                     #bpy.ops.object.material_slot_remove()
-                    
-                    """
-                    print(face.material_index)
-                    matOld = Material(surfaceValue=face.material_index, newObject=obj)
-                    matOld.deleteMaterial(obj=obj, matIndex=face.material_index)
-                    del matOld
-                    """
                 except:
                     print("The Face does not have a Material or the Material has already been removed!")
                 bpy.ops.object.mode_set(mode='EDIT')
@@ -59,9 +54,13 @@ class SetSurfaceOperator(bpy.types.Operator):
                 # set the color of the material
                 mat.setColor()
                 # assign the material to the selected face in blender                
-                mat.addMaterialToFace()
-
+                #mat.addMaterialToFace(face.material_index,faceindex)
+                bpy.context.object.material_slots[materialSlot].material = mat.material
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.material_slot_remove_unused()
         bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=False, do_recursive=True)
+        bpy.ops.object.mode_set(mode='EDIT')
       
         return {'FINISHED'}
     
@@ -76,14 +75,15 @@ class CalculateSemanticsOperator(bpy.types.Operator):
             mat.createMaterial()
             mat.setColor()
             mat.addMaterialToFace(matSlot,faceIndex)
+            del mat
 
         def materialCleaner():
+            bpy.ops.object.mode_set(mode='OBJECT')
             for face in obj.data.polygons:
-                bpy.ops.object.mode_set(mode='OBJECT')
                 matIndex = face.material_index
                 bpy.context.object.active_material_index = matIndex
                 bpy.ops.object.material_slot_remove()
-                bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.object.mode_set(mode='EDIT')   
             bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=False, do_recursive=True)
 
         obj = context.object
@@ -91,23 +91,46 @@ class CalculateSemanticsOperator(bpy.types.Operator):
         materialCleaner()
         matSlot = 0
         for faceIndex, face in enumerate(obj.data.polygons):
-            faceNormal = face.normal
-            if faceNormal[2]==-1:
+            """faceNormal = face.normal
+            faceNormalZ = faceNormal[2]
+            if math.isclose(faceNormalZ ,-1.0):
                 surfaceType = "GroundSurface"
                 materialCreator(surfaceType,matSlot,faceIndex)
+                print(faceNormalZ)
                 print("Ground")
                 matSlot+=1
-            elif faceNormal[2]>0:
-                surfaceType = "RoofSurface"
-                materialCreator(surfaceType,matSlot,faceIndex)
-                print("Roof")
-                matSlot+=1
-            else:
+            elif math.isclose(faceNormalZ,0,abs_tol=1e-3) or ((faceNormalZ < 0) and (math.isclose(faceNormalZ,-1.0) == False)):
                 surfaceType = "WallSurface"
                 materialCreator(surfaceType,matSlot,faceIndex)
+                print(faceNormalZ)
                 print("Wall")
                 matSlot+=1
-
+            else:
+                surfaceType = "RoofSurface"
+                materialCreator(surfaceType,matSlot,faceIndex)
+                print(faceNormalZ)
+                print("Roof")
+                matSlot+=1"""
+            
+            if math.isclose(face.normal[2] ,-1.0):
+                surfaceType = "GroundSurface"
+                materialCreator(surfaceType,matSlot,faceIndex)
+                print(face.normal[2])
+                print("Ground")
+                matSlot+=1
+            elif math.isclose(face.normal[2],0,abs_tol=1e-3) or ((face.normal[2] < 0) and (math.isclose(face.normal[2],-1.0) == False)):
+                surfaceType = "WallSurface"
+                materialCreator(surfaceType,matSlot,faceIndex)
+                print(face.normal[2])
+                print("Wall")
+                matSlot+=1
+            else:
+                surfaceType = "RoofSurface"
+                materialCreator(surfaceType,matSlot,faceIndex)
+                print(face.normal[2])
+                print("Roof")
+                matSlot+=1
+        
         return {'FINISHED'}
 
     

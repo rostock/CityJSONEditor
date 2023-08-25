@@ -1,4 +1,5 @@
-import bpy
+import bpy 
+import bmesh
 from .FeatureTypes import (FeatureTypes)
 
 class Material:
@@ -111,11 +112,15 @@ class Material:
 
     def addMaterialToFace(self, index, faceIndex):
         #materialSlot = bpy.context.object.material_slots.find(str(self.objectID)+"_"+str(self.type))
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.context.object.data.polygons[faceIndex].select = True
-        bpy.ops.object.mode_set(mode='EDIT')
-        materialSlot = index
-        bpy.context.object.active_material_index = materialSlot
+        #bpy.ops.object.mode_set(mode='OBJECT')
+        #bpy.context.object.data.polygons[faceIndex].select = True
+        me = bpy.context.object.data
+        bm = bmesh.from_edit_mesh(me)
+        bm.faces.ensure_lookup_table()
+        bm.faces[faceIndex].select = True
+        bmesh.update_edit_mesh(me)
+        #bpy.ops.object.mode_set(mode='EDIT')
+        bpy.context.object.active_material_index = index
         bpy.ops.object.material_slot_assign()
         bpy.ops.mesh.select_all(action='DESELECT')
 
