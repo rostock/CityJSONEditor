@@ -180,7 +180,7 @@ class ExportCityObject:
             # semantic: material of the surface which is also contains the semantic information regarding the surface type
             semantic = poly.material_index
             self.semanticValues.append(semantic)
-            semanticSurface = mesh.materials[semantic]['CJEOtype']
+            semanticSurface = mesh.materials[semantic]['cityJSONType']
             self.semanticSurfaces.append({"type": semanticSurface})
             if self.textureSetting:
                 # extract uv mapping
