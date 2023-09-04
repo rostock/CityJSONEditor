@@ -43,13 +43,13 @@ Go to `File > Import > CityJSON (.json)` and navigate to the directory where the
 
 #### Notes
 
-- only one object is intended to be imported in a file
-- the import action will delete everything from the scene including the scene itself
+- The first imported CityJSON file will define the geographical origin of the scenes coordinate system.
+- Each import after the first will be set relative to this set origin.
 
 ### Editing
 
 This addon is intended to be used in a way where you, the user, import a CityJSON geometry e.g. a ground surface of a building as a first step of any workflow. Blender is not a GIS, so we do not have proper ways of georeferencing objects that have been made in a "standard" .blend file. The importer of the module we based the addon off had a way to deal with large coordinates of CRSs, so we used this existing approach. So please always start with some form of a referenced object or otherwise your spend time , creating a detailed Object, goes to waste.
-It is also not intended to import other objects into the scene as the importer constructs a special semantic, which is to be upheld in order to be able to export a valid CityJSON file.
+It is possible to create new objects in a scene that has been created by importing a valid CityJSON model first. Just remember to add all semantics to it before exporting or otherwise there will be errors in writing the file (as described below).
 
 #### Standard Workflow
 
@@ -62,8 +62,7 @@ This initializes all the custom properties you will be able to set later. You sh
 
 2. Now, still in `Object Mode`, you can assign values for LOD (`set LOD`), ObjectType (`set Construction`) and GeometryType (`set Type`). Use the context menus options to do so respectively. 
 
-3. After you have assigned the `CJEOconstruction` attribute, which declares the Object as a Bridge, Building etc., you can switch into `Edit Mode` to assign SurfaceTypes to your geometry. This is done by selecting a face, right-click to open the context menu and selecting the desired SurfaceType.
-This action will create materials of the corresponding name which have attributes that will be used in the export to CityJSON.
+3. After you have assigned the `CJEOconstruction` attribute, which declares the Object as a Bridge, Building etc., you can switch into `Edit Mode` to assign SurfaceTypes to your geometry. This is done by selecting a face, right-click to open the context menu and selecting the desired SurfaceType. If the polygons do not yet have a material you first need to create them by using the `calculateSemantics` function. It will calculate the most probable semantic type based on the face normals. 
 
 4. If you wish to add `Textures` you can do so by altering existing materials. 
 
@@ -73,9 +72,11 @@ This action will create materials of the corresponding name which have attribute
 
 To export your Object simply go to `File > Export > CityJSON (.json)`.
 
-## Video Tutorial
+## Video Tutorial (deprecated)
 
-https://youtu.be/t7i318j1Fng
+This tutorial showcases the old version, but we will leave it here since it also covers some of the basics that still apply.
+
+- https://youtu.be/t7i318j1Fng
 
 
 ## Further Development

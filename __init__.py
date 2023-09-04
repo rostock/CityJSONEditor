@@ -2,7 +2,7 @@
 bl_info = {
     "name": "CityJSONEditor",
     "author": "Konstantinos Mastorakis, Tim Balschmiter, Hagen Schoenkaese",
-    "version": (2, 0, 0),
+    "version": (2, 0, 1),
     "blender": (3, 5, 1),
     "location": "File > Import > CityJSON (.json) || File > Export > CityJSON (.json)",
     "description": "Visualize, edit and export 3D structures encoded in CityJSON format",
