@@ -9,7 +9,7 @@ class ImportProcess:
         self.filepath = filepath
         # Content of imported file
         self.data = []
-        # Vertices of imported files geometry
+        # Vertices of imported files geometry for further use in blenders objects
         self.vertices = []
         # Translation parameters / world origin
         self.worldOrigin = []
@@ -19,6 +19,8 @@ class ImportProcess:
         # True - import textures
         # False - do not import textures
         self.textureSetting = textureSetting
+        # vertices before scaling
+        self.unScaledVertices = []
 
     def load_data(self):
         # load contents of file 
@@ -26,16 +28,52 @@ class ImportProcess:
             self.data = json.load(json_file)
 
     def getTransformationParameters(self):
-        # extract coordinates of CityJSON world origin / real world offset parameters
-        for param in self.data['transform']['translate']:
-            self.worldOrigin.append(param)
-        # extract scale factor for coordinate values of vertices
-        for param in self.data['transform']['scale']:
-            self.scaleParam.append(param)
+
+        try: 
+            # check if the transform property exists
+            transformProperty = self.data['transform']
+
+        except:
+            # if it does not exist, create it
+            print('The files does not have the transform property, therefore it will now be created and applied to all vertices!')
+            # calc trsanlate matrix
+            bboxXmin = self.data['metadata']['geographicalExtent'][0]
+            bboxYmin = self.data['metadata']['geographicalExtent'][1]
+            bboxZmin = min([self.data['metadata']['geographicalExtent'][2], self.data['metadata']['geographicalExtent'][5]])
+            translate = [bboxXmin, bboxYmin, bboxZmin]
+            self.worldOrigin = translate 
+            # scale factor is 1 since the values are in meters (with decimals)
+            scale = [1, 1, 1]
+            self.scaleParam = scale
+            
+            # apply transform values to all vertices
+            for vertex in self.data['vertices']:
+                x = vertex[0]-bboxXmin
+                y = vertex[1]-bboxYmin
+                z = vertex[2]-bboxZmin
+                self.unScaledVertices.append([x,y,z])
+
+
+        else:
+            # if it exists, use it
+            print('The file has the transform property!')
+            # extract coordinates of CityJSON world origin / real world offset parameters
+            for param in self.data['transform']['translate']:
+                self.worldOrigin.append(param)
+            # extract scale factor for coordinate values of vertices
+            for param in self.data['transform']['scale']:
+                self.scaleParam.append(param)
+            # no need for processing of the vertices so they are just send along "as is "
+            for vertex in self.data['vertices']:
+                x = vertex[0]
+                y = vertex[1]
+                z = vertex[2]
+                self.unScaledVertices.append([x,y,z])           
+            
 
     def scaleVertexCoordinates(self):
         # apply scale factor to vertices
-        for vertex in self.data['vertices']:
+        for vertex in self.unScaledVertices:
             x = round(vertex[0]*self.scaleParam[0],3)
             y = round(vertex[1]*self.scaleParam[1],3)
             z = round(vertex[2]*self.scaleParam[2],3)

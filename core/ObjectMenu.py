@@ -8,7 +8,7 @@ class SetAttributes(bpy.types.Operator):
     def execute(self,context):
         obj = bpy.context.active_object
         obj['cityJSONType'] = "Building"
-        obj['LOD'] = 2  
+        obj['LOD'] = 2 
         return {'FINISHED'} 
 
 class SetConstructionOperator(bpy.types.Operator):

@@ -1,4 +1,4 @@
-from asyncio.windows_events import NULL
+#from asyncio.windows_events import NULL
 from types import NoneType
 import bpy
 from .FeatureTypes import FeatureTypes
@@ -91,44 +91,17 @@ class CalculateSemanticsOperator(bpy.types.Operator):
         materialCleaner()
         matSlot = 0
         for faceIndex, face in enumerate(obj.data.polygons):
-            """faceNormal = face.normal
-            faceNormalZ = faceNormal[2]
-            if math.isclose(faceNormalZ ,-1.0):
-                surfaceType = "GroundSurface"
-                materialCreator(surfaceType,matSlot,faceIndex)
-                print(faceNormalZ)
-                print("Ground")
-                matSlot+=1
-            elif math.isclose(faceNormalZ,0,abs_tol=1e-3) or ((faceNormalZ < 0) and (math.isclose(faceNormalZ,-1.0) == False)):
-                surfaceType = "WallSurface"
-                materialCreator(surfaceType,matSlot,faceIndex)
-                print(faceNormalZ)
-                print("Wall")
-                matSlot+=1
-            else:
-                surfaceType = "RoofSurface"
-                materialCreator(surfaceType,matSlot,faceIndex)
-                print(faceNormalZ)
-                print("Roof")
-                matSlot+=1"""
-            
             if math.isclose(face.normal[2] ,-1.0):
                 surfaceType = "GroundSurface"
                 materialCreator(surfaceType,matSlot,faceIndex)
-                print(face.normal[2])
-                print("Ground")
                 matSlot+=1
             elif math.isclose(face.normal[2],0,abs_tol=1e-3) or ((face.normal[2] < 0) and (math.isclose(face.normal[2],-1.0) == False)):
                 surfaceType = "WallSurface"
                 materialCreator(surfaceType,matSlot,faceIndex)
-                print(face.normal[2])
-                print("Wall")
                 matSlot+=1
             else:
                 surfaceType = "RoofSurface"
                 materialCreator(surfaceType,matSlot,faceIndex)
-                print(face.normal[2])
-                print("Roof")
                 matSlot+=1
         
         return {'FINISHED'}

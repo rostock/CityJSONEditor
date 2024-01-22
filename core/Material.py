@@ -82,8 +82,6 @@ class Material:
             texture_node.image = image
             # link the texture-node to the PBSDF-node
             self.material.node_tree.links.new(texture_node.outputs[0], principled_BSDF.inputs[0])
-            
-            #print("image texture: "+str(image_path_raw)+" was used!")
         
         else: 
             self.setColor()

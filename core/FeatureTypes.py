@@ -221,7 +221,8 @@ class FeatureTypes:
                 "lod": [1,2,3,4,5],
                 "color": "#ffffff"
             }
-        }
+        },
+        "GenericCityObject":{}
     }
    
     def getRGBColor(self, construction, surface):

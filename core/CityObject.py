@@ -1,5 +1,6 @@
 import bpy
 import numpy
+import math
 from .Mesh import Mesh
 from.Material import Material
 
@@ -22,6 +23,8 @@ class ImportCityObject:
         self.materials = []
         # type of the given object e.g. "Building" or "Bridge" etc.
         self.objectType = self.object['type']
+        # LOD of the given object
+        self.objectLOD = math.floor(self.object['geometry'][0]['lod'])
         # entire Data of the file
         self.rawObjectData = rawObjectData
         # File to be imported
@@ -35,8 +38,9 @@ class ImportCityObject:
     def createObject(self, mesh):
         # create a new object with the stored mesh
         newObj = bpy.data.objects.new(self.objectID, mesh)
-        # create a custom property of the object to save its type
+        # create a custom property of the object to save its type and LOD
         newObj['cityJSONType'] = self.objectType
+        newObj['LOD'] = self.objectLOD
         # get the collection with the title "Collection"
         collection = bpy.data.collections.get("Collection")
         # add the new object to the collection
@@ -45,7 +49,8 @@ class ImportCityObject:
 
     def createMaterials(self, newObject):
         for geom in self.object['geometry']:
-            if geom['type'] == 'Solid':
+            # only create surface semanrics if the object is a solid and NOT a GenericCityObject
+            if geom['type'] == 'Solid' and self.object['type']!='GenericCityObject':
                 # surfaceIndex --> the index in the "values"-array, which is the index of the surface
                 # surfaceValue --> the value of the surface, wich is a link to an entry in the "surfaces"-array
                 for surfaceIndex, surfaceValue in enumerate(geom['semantics']['values'][0]):
@@ -107,6 +112,7 @@ class ExportCityObject:
         self.vertices = []
         self.objID = self.object.name
         self.objType = self.object['cityJSONType']
+        self.lod = self.object['LOD']
         self.maxValue = ""
         self.offsetArray = [bpy.context.scene.world['X_Origin'],bpy.context.scene.world['Y_Origin'],bpy.context.scene.world['Z_Origin']]
         self.objGeoExtent = []
@@ -168,6 +174,7 @@ class ExportCityObject:
         self.lastVertexIndex = maxVertex
         self.geometry = [{
             "type": "Solid",
+            "lod": self.lod,
             "boundaries" : [boundaries]
         }]
 
@@ -220,7 +227,10 @@ class ExportCityObject:
     def createJSON(self):
         self.json = {self.objID : {"geographicalExtent" : self.objGeoExtent}}
         self.json[self.objID].update({"type": self.objType})
-        self.geometry[0].update({"semantics" : {"values" : [self.semanticValues],"surfaces" : self.semanticSurfaces}})
+        if self.objType == 'GenericCityObject':
+            pass
+        else:
+            self.geometry[0].update({"semantics" : {"values" : [self.semanticValues],"surfaces" : self.semanticSurfaces}})
         if self.textureSetting: 
             self.geometry[0].update({"texture" : {"default" : { "values" : [self.textureValues] }}})
         self.json[self.objID].update({"geometry" : self.geometry})
@@ -229,6 +239,9 @@ class ExportCityObject:
         self.getVertices()
         self.getObjectExtend()
         self.getBoundaries()
-        self.getSemantics()
+        if self.objType == 'GenericCityObject':
+            pass
+        else: 
+            self.getSemantics()
         self.createJSON()
         

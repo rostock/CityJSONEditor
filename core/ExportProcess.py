@@ -119,7 +119,7 @@ class ExportProcess:
                 vertex[2] = round(vertex[2]/0.001)
                 vertexArray.append(vertex)
             self.jsonExport["CityObjects"].update(cityobj.json)
-            lastVertexIndex = cityobj.lastVertexIndex
+            lastVertexIndex = cityobj.lastVertexIndex + 1
         self.jsonExport['vertices'] = vertexArray
 
     def exportTextures(self, texture):
