@@ -34,14 +34,16 @@ class Material:
         self.geometry = geometry
 
     def createMaterial(self):
+        # add a new slot for the material in the current object
+        bpy.ops.object.material_slot_add()
         # create the material with a fitting name
         material = bpy.data.materials.new(name=str(self.objectID)+"_"+str(self.type))
         # create the custom parameter of the objects type
         material['CJEOtype'] = self.type
-        # add the material to the current object
-        self.currentObject.data.materials.append(material)
+        # add the material to the material slot created above        
+        bpy.context.object.active_material = material
         self.material = material
-
+        
     def setTexture(self):
         
         # list of all themes used in the object
@@ -106,18 +108,14 @@ class Material:
         # the objects material of index: "surfaceValue"
         bpy.data.meshes[self.objectID].polygons[surfaceIndex].material_index = surfaceValue   
 
-    # Methods for use in edit-mode context menu
+    # Methods for use in edit-mode context menu and face-normal based calculation
 
     def addMaterialToFace(self, index, faceIndex):
-        #materialSlot = bpy.context.object.material_slots.find(str(self.objectID)+"_"+str(self.type))
-        #bpy.ops.object.mode_set(mode='OBJECT')
-        #bpy.context.object.data.polygons[faceIndex].select = True
         me = bpy.context.object.data
         bm = bmesh.from_edit_mesh(me)
         bm.faces.ensure_lookup_table()
         bm.faces[faceIndex].select = True
         bmesh.update_edit_mesh(me)
-        #bpy.ops.object.mode_set(mode='EDIT')
         bpy.context.object.active_material_index = index
         bpy.ops.object.material_slot_assign()
         bpy.ops.mesh.select_all(action='DESELECT')

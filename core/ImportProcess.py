@@ -1,6 +1,7 @@
 import json
 import bpy
 from .CityObject import ImportCityObject, ExportCityObject
+import time
 
 class ImportProcess:
 
@@ -128,7 +129,7 @@ class ImportProcess:
         print("World parameters have been set!")
 
     def createCityObjects(self):
-        # create the CityObjects with coresponding meshes
+        # create the CityObjects with coresponding meshesS
         cityobjects = self.data['CityObjects'] #variable is a dict
         for objID, object in cityobjects.items():
             print('Creating object: '+ objID)
@@ -137,6 +138,8 @@ class ImportProcess:
         print('All CityObjects have been created!')
 
     def execute(self):
+        time_start = time.time()
+        bpy.ops.wm.console_toggle()
         print('##########################')
         print('### STARTING IMPORT... ###')
         print('##########################')
@@ -156,4 +159,5 @@ class ImportProcess:
         print('########################')
         print('### IMPORT FINISHED! ###')
         print('########################')
+        print("Time needed: %.4f sec" % (time.time() - time_start))
         return {'FINISHED'}

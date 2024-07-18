@@ -27,11 +27,12 @@ classes = (
     # EditMode Menu
     EditMenu.SetSurfaceOperator,
     EditMenu.VIEW3D_MT_cityedit_mesh_context_submenu,
-    EditMenu.CalculateSemanticsOperator,
+    # EditMenu.CalculateSemanticsOperator,
     # ObjectMode Menu
     ObjectMenu.SetConstructionOperator,
     ObjectMenu.VIEW3D_MT_cityobject_construction_submenu,
     ObjectMenu.SetAttributes,
+    ObjectMenu.CalculateSemanticsOperator,
 
 )
 
@@ -50,6 +51,7 @@ def objectmenu_func(self, context):
     layout.label(text="CityJSON Options")
     layout.operator(ObjectMenu.SetAttributes.bl_idname, text="set initial attributes")
     layout.menu(ObjectMenu.VIEW3D_MT_cityobject_construction_submenu.bl_idname, text="set Construction")
+    layout.operator(ObjectMenu.CalculateSemanticsOperator.bl_idname, text="calculate Semantics")
 
 def editmenu_func(self, context):
     """create context menu in edit mode"""
@@ -59,7 +61,6 @@ def editmenu_func(self, context):
         layout.separator()
         layout.label(text="CityJSON Options")
         layout.menu(EditMenu.VIEW3D_MT_cityedit_mesh_context_submenu.bl_idname, text="set SurfaceType")
-        layout.operator(EditMenu.CalculateSemanticsOperator.bl_idname, text="calculateSemantics")
 
 
 
@@ -82,7 +83,9 @@ def unregister():
     """Unregisters the classes and functions of the addon"""
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
-
+    bpy.types.VIEW3D_MT_object.append(objectmenu_func)
+    bpy.types.VIEW3D_MT_object_context_menu.append(objectmenu_func)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(editmenu_func)
     for cls in classes:
         bpy.utils.unregister_class(cls)
 

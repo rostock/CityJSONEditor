@@ -48,7 +48,7 @@ Go to `File > Import > CityJSON (.json)` and navigate to the directory where the
 
 ### Editing
 
-This addon is intended to be used in a way where you, the user, import a CityJSON geometry e.g. a ground surface of a building as a first step of any workflow. Blender is not a GIS, so we do not have proper ways of georeferencing objects that have been made in a "standard" .blend file. The importer of the module we based the addon off had a way to deal with large coordinates of CRSs, so we used this existing approach. So please always start with some form of a referenced object or otherwise your spend time , creating a detailed Object, goes to waste.
+This addon is intended to be used in a way where you, the user, import a CityJSON geometry e.g. a ground surface of a building as a first step of any workflow. Blender is not a GIS, so we do not have proper ways of georeferencing objects that have been made in a "standard" .blend file. The importer of the module we based the addon off had a way to deal with large coordinates of CRSs, so we used this existing approach. So please always start with some form of a referenced object or otherwise your spend time creating a detailed Object goes to waste.
 It is possible to create new objects in a scene that has been created by importing a valid CityJSON model first. Just remember to add all semantics to it before exporting or otherwise there will be errors in writing the file (as described below).
 
 #### Standard Workflow

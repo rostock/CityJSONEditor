@@ -3,6 +3,7 @@ import numpy
 import math
 from .Mesh import Mesh
 from.Material import Material
+import time
 
 class ImportCityObject:
 
@@ -30,6 +31,28 @@ class ImportCityObject:
         # File to be imported
         self.filepath = filepath
 
+    # Print iterations progress
+    def printProgressBar (self, iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r",time = ''):
+        """
+        Call in a loop to create terminal progress bar
+        @params:
+            iteration   - Required  : current iteration (Int)
+            total       - Required  : total iterations (Int)
+            prefix      - Optional  : prefix string (Str)
+            suffix      - Optional  : suffix string (Str)
+            decimals    - Optional  : positive number of decimals in percent complete (Int)
+            length      - Optional  : character length of bar (Int)
+            fill        - Optional  : bar fill character (Str)
+            printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+        """
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% ({iteration}/{total}) {suffix}  {time}', end = printEnd)
+        # Print New Line on Complete
+        if iteration == total: 
+            print()
+
     def createMesh(self, object, vertices, oid):
         # create the objects mesh and store the data
         mesh = Mesh(object,vertices,oid)
@@ -47,18 +70,26 @@ class ImportCityObject:
         collection.objects.link(newObj)
         return newObj
 
+#TODO Optimization of material.execute() needed, Import slows down noticably
+
     def createMaterials(self, newObject):
         for geom in self.object['geometry']:
             # only create surface semanrics if the object is a solid and NOT a GenericCityObject
             if geom['type'] == 'Solid' and self.object['type']!='GenericCityObject':
+                l = len(geom['semantics']['values'][0])
                 # surfaceIndex --> the index in the "values"-array, which is the index of the surface
                 # surfaceValue --> the value of the surface, wich is a link to an entry in the "surfaces"-array
+                self.printProgressBar(0, l, prefix = 'Materials:', suffix = 'Complete', length = 50)
                 for surfaceIndex, surfaceValue in enumerate(geom['semantics']['values'][0]):
+                    time_mat = time.time()
                     material = Material(geom['semantics']['surfaces'][surfaceValue]['type'], newObject, self.objectID, self.textureSetting, self.objectType, surfaceIndex, surfaceValue, self.rawObjectData, self.filepath, geom )
                     material.execute()
-                    # add a created material to the array of all of the objects materials
-                    self.materials.append(material) 
-    
+                    time_needed = time.time() - time_mat
+                    # Update Progress Bar
+                    self.printProgressBar(surfaceIndex+1 , l, prefix = 'Materials:', suffix = 'Complete', length = 50, time='Time for Material: %.4f sec' % (time_needed))
+            else:
+                print("The geometry in this file has the type 'MultiSurface'. \nOnly type 'Solid' is currentlly supported in this version.")
+            
     def uvMapping(self, object, data, geom):
 
         # list of all themes used in the object
@@ -99,16 +130,24 @@ class ImportCityObject:
     def execute(self):
         self.createMesh(self.object, self.vertices, self.objectID)
         newObject = self.createObject(self.mesh)
+        print("Mesh has been created!")
+        # select the object to become active object
+        bpy.data.objects[self.objectID].select_set(True)
+        bpy.context.view_layer.objects.active = bpy.data.objects[self.objectID]
+        # create the objects materials and assign them
         self.createMaterials(newObject)
-        try:
-            # UV Mapping of the textures
-            self.uvMapping(newObject, self.rawObjectData, self.object['geometry'][0])
-        except:
-            print("UV Mapping was not possible because the CityJSON file does not contain appearances!")
+        if self.textureSetting ==True:
+            try:
+                # UV Mapping of the textures
+                self.uvMapping(newObject, self.rawObjectData, self.object['geometry'][0])
+            except:
+                    print("UV Mapping was not possible because the CityJSON file does not contain appearances!")
+        else: pass
 
 class ExportCityObject:
     def __init__(self, object, lastVertexIndex, jsonExport, textureSetting, textureReferenceList):
         self.object = object
+        # all vertices of the current object
         self.vertices = []
         self.objID = self.object.name
         self.objType = self.object['cityJSONType']
@@ -161,6 +200,7 @@ class ExportCityObject:
         for poly in mesh.polygons:
             loop = []
             # iterate through loops inside polygons
+            # get the vertex coordinates and find the Index in the corresponding list of all vertices
             for loop_index in poly.loop_indices:
                 vertexIndex = mesh.loops[loop_index].vertex_index
                 vertexValue = []
@@ -168,9 +208,10 @@ class ExportCityObject:
                 vertexValue.append(mesh.vertices[vertexIndex].co[1])
                 vertexValue.append(mesh.vertices[vertexIndex].co[2])
                 exportIndex = self.vertices.index(vertexValue)
+                # close the loop
                 loop.append(exportIndex+self.lastVertexIndex)
             boundaries.append([loop])
-        maxVertex = max(max([max(i) for i in boundaries]))
+        maxVertex = max([max(j) for j in [max(i) for i in boundaries]])
         self.lastVertexIndex = maxVertex
         self.geometry = [{
             "type": "Solid",

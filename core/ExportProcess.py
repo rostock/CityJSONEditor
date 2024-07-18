@@ -120,6 +120,7 @@ class ExportProcess:
                 vertexArray.append(vertex)
             self.jsonExport["CityObjects"].update(cityobj.json)
             lastVertexIndex = cityobj.lastVertexIndex + 1
+            print("lastVertexIndex "+str(lastVertexIndex))
         self.jsonExport['vertices'] = vertexArray
 
     def exportTextures(self, texture):
@@ -156,8 +157,6 @@ class ExportProcess:
             self.getTextures()
             self.getVerticesTexture()
         self.createCityObject()
-        #print(self.jsonExport)
-
         self.writeData()
 
         print('########################')
