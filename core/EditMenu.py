@@ -37,7 +37,7 @@ class SetSurfaceOperator(bpy.types.Operator):
                 if face.select == True:
                     try:
                         material = bpy.context.object.active_material.name
-                        print("name of the surface's old material: "+ str(material))
+                        #print("name of the surface's old material: "+ str(material))
                     except:
                         print("The Face does not have a Material or the Material has already been removed!")
 

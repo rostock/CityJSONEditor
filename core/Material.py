@@ -1,6 +1,7 @@
 import bpy 
 import bmesh
 from .FeatureTypes import (FeatureTypes)
+import time
 
 class Material:
 
@@ -34,14 +35,35 @@ class Material:
         self.geometry = geometry
 
     def createMaterial(self):
+        
+        """
         # add a new slot for the material in the current object
-        bpy.ops.object.material_slot_add()
-        # create the material with a fitting name
+        # THE NEXT LINE IS THE PERFORMANCE KILLER!
+        bpy.ops.object.material_slot_add()        
+         # create the material with a fitting name
         material = bpy.data.materials.new(name=str(self.objectID)+"_"+str(self.type))
         # create the custom parameter of the objects type
         material['CJEOtype'] = self.type
         # add the material to the material slot created above        
         bpy.context.object.active_material = material
+        self.material = material
+        """
+
+        object = bpy.context.object
+        # add a new slot for the material in the current object
+        object.data.materials.append(None)
+        # get the material slots of the object
+        material_slots = object.material_slots
+        # get the index of the last material slot
+        last_material_index = len(material_slots) - 1
+        # set material slot as active
+        object.active_material_index = last_material_index
+        # create the material with a fitting name
+        material = bpy.data.materials.new(name=str(self.objectID)+"_"+str(self.type))
+        # create the custom parameter of the objects type
+        material['CJEOtype'] = self.type
+        # add the material to the material slot created above 
+        object.active_material = material
         self.material = material
         
     def setTexture(self):
@@ -129,3 +151,4 @@ class Material:
             self.setColor()
         # assign the materials to the individual faces
         self.assignMaterials(self.surfaceIndex, self.surfaceValue)
+        

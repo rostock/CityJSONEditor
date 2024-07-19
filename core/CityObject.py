@@ -86,7 +86,7 @@ class ImportCityObject:
                     material.execute()
                     time_needed = time.time() - time_mat
                     # Update Progress Bar
-                    self.printProgressBar(surfaceIndex+1 , l, prefix = 'Materials:', suffix = 'Complete', length = 50, time='Time for Material: %.4f sec' % (time_needed))
+                    self.printProgressBar(surfaceIndex+1 , l, prefix = 'Materials:', suffix = 'Complete', length = 50, time='t/m: %.4f sec' % (time_needed))
             else:
                 print("The geometry in this file has the type 'MultiSurface'. \nOnly type 'Solid' is currentlly supported in this version.")
             
