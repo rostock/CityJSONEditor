@@ -70,7 +70,6 @@ class ImportCityObject:
         collection.objects.link(newObj)
         return newObj
 
-#TODO Optimization of material.execute() needed, Import slows down noticably
 
     def createMaterials(self, newObject):
         for geom in self.object['geometry']:
@@ -225,15 +224,22 @@ class ExportCityObject:
         self.semanticSurfaces =[]
         # iterate through polygons
         for polyIndex, poly  in enumerate(mesh.polygons):
-            # semantic: material of the surface which is also contains the semantic information regarding the surface type
-            semantic = poly.material_index
-            self.semanticValues.append(semantic)
-            semanticSurface = mesh.materials[semantic]['CJEOtype']
+            # index of the material slot of the current polygon in blender
+            blenderMaterialIndex = poly.material_index 
+
+            # List of all polygons in index order from 0 to xxx
+            self.semanticValues.append(polyIndex)
+            
+            # type of surface (semantic of surface) of current polygon
+            semanticSurface = mesh.materials[blenderMaterialIndex]['CJEOtype']
+            # List of semantics in reordered from blenders indices to order of polygon indices
+            # example: polygon 4 has semanticValue index of 4 --> semantics of material that is in material slot 163 in blender is written at the current index of 4 in the semanticSurfaces list via append  
             self.semanticSurfaces.append({"type": semanticSurface})
+
             if self.textureSetting:
                 # extract uv mapping
-                self.getTextureMapping(mesh, poly, semantic, polyIndex)
-    
+                self.getTextureMapping(mesh, poly, blenderMaterialIndex, polyIndex)
+
     def getTextureMapping(self, mesh, poly, semantic, polyIndex):
         #check if face has texture
         if len(mesh.materials[semantic].node_tree.nodes) > 2:
